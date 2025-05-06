@@ -10,14 +10,16 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float dashCooldown = 1f;  // Tempo de cooldown para usar o dash
     private float dashCooldownTimer = 0f;              // Controle do tempo de cooldown do dash
     private int dashCount = 3;                         // Número de dashes disponíveis
-    private float[] dashTimers;                        // Armazena os tempos de recarga para cada dash
 
     [Header("Configuração de Liqueficação")]
     [SerializeField] private float liquidDuration = 2f;  // Duração da liqueficação
+    [SerializeField] private float liquidCooldown = 5f;  // Tempo de cooldown para usar a liqueficação
+    private float liquidCooldownTimer = 0f;             // Controle do tempo de cooldown da liqueficação
     private bool isLiquidified = false;                 // Flag para verificar se o jogador está liquefeito
     private BoxCollider playerCollider;            // Referência ao BoxCollider para modificação
     private Vector3 originalColliderSize;          // Tamanho original do colisor
     private Vector3 originalColliderCenter;        // Centro original do colisor
+
 
     private Rigidbody rb;
     private Vector3 inputVector;
@@ -25,14 +27,13 @@ public class PlayerMovement : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        rb.constraints = RigidbodyConstraints.FreezeRotation; // Impede rotação indesejada
+        rb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionY;        // Impede rotação indesejada
         playerCollider = GetComponent<BoxCollider>();  // Referência ao colisor do jogador
 
         // Armazenando o tamanho e o centro do colisor
         originalColliderSize = playerCollider.size;
         originalColliderCenter = playerCollider.center;
 
-        dashTimers = new float[dashCount];  // Inicializando os tempos para recarga de cada dash
     }
 
     void Update()
@@ -43,13 +44,13 @@ public class PlayerMovement : MonoBehaviour
         inputVector = new Vector3(h, 0f, v).normalized;
 
         // Verifica se o jogador apertou o botão de dash
-        if (Input.GetKeyDown(KeyCode.Space) && dashCount > 0 && dashCooldownTimer <= 0f && dashTimers[0] <= 0f)
+        if (Input.GetKeyDown(KeyCode.Space) && dashCount > 0 && dashCooldownTimer <= 0f)
         {
             Dash();
         }
 
         // Verifica se o jogador apertou o botão de liqueficação (Q)
-        if (Input.GetKeyDown(KeyCode.Q) && !isLiquidified)
+        if (Input.GetKeyDown(KeyCode.Q) && !isLiquidified && liquidCooldownTimer <= 0f)
         {
             StartCoroutine(Liquidify());
         }
@@ -58,15 +59,11 @@ public class PlayerMovement : MonoBehaviour
         if (dashCooldownTimer > 0f)
             dashCooldownTimer -= Time.deltaTime;
 
-        // Atualiza o tempo de recarga individual dos dashes
-        for (int i = 0; i < dashCount; i++)
-        {
-            if (dashTimers[i] > 0f)
-            {
-                dashTimers[i] -= Time.deltaTime;  // Controla o tempo de recarga de cada dash
-            }
-        }
+        // Atualiza o tempo de cooldown da liqueficação
+        if (liquidCooldownTimer > 0f)
+            liquidCooldownTimer -= Time.deltaTime;
     }
+
 
     void FixedUpdate()
     {
@@ -75,23 +72,35 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // Função que realiza o Dash
+
     void Dash()
     {
-        dashCooldownTimer = dashCooldown;  // Resetando o cooldown para o uso do dash
-        dashTimers[0] = dashCooldown;      // Resetando o tempo de recarga do primeiro dash
-        dashCount--;                        // Decrementa o número de dashes disponíveis
+        dashCooldownTimer = dashCooldown;  // Resetando o cooldown para o uso do dash  
+        dashCount--;                        // Decrementa o número de dashes disponíveis  
 
-        // Dash em direção à frente do jogador (direção de movimento)
+        // Dash em direção à frente do jogador (direção de movimento)  
         Vector3 dashVector = inputVector * dashSpeed;
-        rb.linearVelocity = new Vector3(dashVector.x, rb.linearVelocity.y, dashVector.z);  // Aplica o dash
+        rb.linearVelocity = new Vector3(dashVector.x, rb.linearVelocity.y, dashVector.z);  // Aplica o dash  
 
         Debug.Log("Dash realizado! Restam " + dashCount + " dashes.");
+
+        // Inicia a recarga do dash  
+        StartCoroutine(RechargeDash());
     }
+
+    private IEnumerator RechargeDash()
+    {
+        yield return new WaitForSeconds(6);
+        dashCount++;  // Recarrega o dash após 3 segundos  
+        Debug.Log("Dash recarregado! Dashes disponíveis: " + dashCount);
+    }
+
 
     // Função que realiza a liqueficação
     private IEnumerator Liquidify()
     {
         isLiquidified = true;
+        liquidCooldownTimer = liquidCooldown; // Reseta o cooldown da liqueficação
 
         // Modificando o colisor para o jogador "ficar achatado" e expandido para os lados
         playerCollider.size = new Vector3(playerCollider.size.x * 2f, 0.1f, playerCollider.size.z * 2f);
@@ -111,6 +120,7 @@ public class PlayerMovement : MonoBehaviour
         isLiquidified = false;
         Debug.Log("Liqueficação terminada.");
     }
+
 
     // Função para recarregar os dashes individualmente após um tempo
     public void RechargeDashes()
