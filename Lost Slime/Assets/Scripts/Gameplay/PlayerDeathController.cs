@@ -1,57 +1,95 @@
+using System.Collections;
 using UnityEngine;
-using UnityEngine.Events;
+using UnityEngine.SceneManagement;
+using Unity.Cinemachine;        
+using UnityEngine.UI;
+using Unity.Cinemachine;
 
 public class PlayerDeathController : MonoBehaviour
 {
-    [Header("Componentes")]
-    [SerializeField] private Health health;                  // seu componente Health
-    [SerializeField] private PlayerMovement movement;        // seu controlador de movimento
-    [SerializeField] private PlayerAttack attack;            // seu controlador de tiro
+    [Header("Core Components")]
+    [SerializeField] private Health health;
+    [SerializeField] private PlayerMovement movement;
+    [SerializeField] private PlayerAttack attack;
+
+    [Header("Cinemachine")]
+    [Tooltip("Your scene's Cinemachine Camera component")]
+    [SerializeField] private CinemachineCamera vCam;  
+    [Tooltip("How long the zoom/shake lasts")]
+    [SerializeField] private float deathEffectDuration = 0.8f;
+    [Tooltip("Field-of-view when zoomed in")]
+    [SerializeField] private float zoomFOV = 40f;
+    [Tooltip("Shake amplitude")]
+    [SerializeField] private float shakeAmplitude = 3f;
 
     [Header("UI")]
-    [SerializeField] private GameObject deathPanel;          // painel com botão “Ressuscitar”
+    [Tooltip("Root panel with black overlay + YOU DIED text")]
+    [SerializeField] private GameObject deathPanel;
 
-    private Vector3 spawnPoint;
+    private float originalFOV;
+    private CinemachineBasicMultiChannelPerlin perlin;
 
     void Awake()
     {
-        // lembra onde nasceu
-        spawnPoint = transform.position;
+        // auto-grab if nothing was assigned
+        health ??= GetComponent<Health>();
+        movement ??= GetComponent<PlayerMovement>();
+        attack ??= GetComponent<PlayerAttack>();
 
-        // referencia automática se não arrastou
-        if (health == null) health = GetComponent<Health>();
-        if (movement == null) movement = GetComponent<PlayerMovement>();
-        if (attack == null) attack = GetComponent<PlayerAttack>();
-
-        // fecha o painel no começo
+        // hide death UI
         if (deathPanel != null) deathPanel.SetActive(false);
 
-        // inscreve no evento onDied
+        // listen for death
         health.onDied.AddListener(OnPlayerDied);
+
+        // cinemachine setup
+        if (vCam != null)
+        {
+            originalFOV = vCam.Lens.FieldOfView;
+            perlin = vCam.GetCinemachineComponent(CinemachineCore.Stage.Noise) as CinemachineBasicMultiChannelPerlin;
+            if (perlin != null)
+                perlin.AmplitudeGain = 0f;      // <–– aqui desligamos todo shake no início
+        
+    }
     }
 
     private void OnPlayerDied()
     {
-        // bloqueia controles
+        // disable controls
         movement.enabled = false;
         attack.enabled = false;
 
-        // mostra UI de morte
+        // show the black panel + text
         if (deathPanel != null)
             deathPanel.SetActive(true);
+
+        // trigger camera effect
+        if (vCam != null)
+            StartCoroutine(DeathCameraEffect());
     }
 
-    // este método será chamado pelo botão “Ressuscitar”
-    public void Respawn()
+    private IEnumerator DeathCameraEffect()
     {
-        // reposiciona
-        transform.position = spawnPoint;
-        // reseta vida
-        health.Apply(health.MaxHealth);
-        // oculta painel e reativa controles
-        if (deathPanel != null)
-            deathPanel.SetActive(false);
-        movement.enabled = true;
-        attack.enabled = true;
+        // zoom in
+        vCam.Lens.FieldOfView = zoomFOV;
+        // start shake
+        if (perlin != null)
+            perlin.AmplitudeGain = shakeAmplitude;
+
+        yield return new WaitForSeconds(deathEffectDuration);
+
+        // restore FOV & stop shake
+        vCam.Lens.FieldOfView = originalFOV;
+        if (perlin != null)
+            perlin.AmplitudeGain = 0f;
+    }
+
+    void Update()
+    {
+        // once dead-panel is up, Space reloads current scene
+        if (deathPanel != null && deathPanel.activeSelf && Input.GetKeyDown(KeyCode.Space))
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
     }
 }
