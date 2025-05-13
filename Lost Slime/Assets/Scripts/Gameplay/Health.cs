@@ -13,6 +13,7 @@ public class Health : MonoBehaviour
     public UnityEvent onDied;
     public UnityEvent onHit;
 
+    public bool isImmune = false; // Flag to track damage immunity
     void Awake()
     {
         Current = maxHealth;
@@ -24,6 +25,8 @@ public class Health : MonoBehaviour
     /// </summary>
     public void Apply(int amount)
     {
+        // Só ignora se for dano e estiver imune
+        if (amount < 0 && isImmune) return;
         if (Current <= 0) return;
 
         Current = Mathf.Clamp(Current + amount, 0, maxHealth);
