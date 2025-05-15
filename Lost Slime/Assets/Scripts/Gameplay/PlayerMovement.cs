@@ -125,5 +125,6 @@ public class PlayerMovement : MonoBehaviour
         isLiquidified = false;
         Debug.Log("Liqueficação terminada.");
     }
+    public bool IsLiquidified => isLiquidified;
 
 }

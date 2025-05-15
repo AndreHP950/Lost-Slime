@@ -89,6 +89,7 @@ public class HUDController : MonoBehaviour
 
     private IEnumerator LoseSegmentEffect(Image segment)
     {
+        Debug.Log("Iniciando LoseSegmentEffect para: " + segment.name);
         float elapsed = 0f;
         Color original = segment.color;
         Vector3 originalPos = segment.rectTransform.anchoredPosition;
