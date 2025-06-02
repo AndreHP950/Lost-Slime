@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System.Linq;
 
 public class HUDController : MonoBehaviour
 {
@@ -35,44 +36,107 @@ public class HUDController : MonoBehaviour
 
     void Start()
     {
-        playerHealth.onHealthChanged.AddListener(UpdateHealthBar);
-        playerHealth.onHit.AddListener(OnPlayerHit);
-        UpdateHealthBar(playerHealth.Current);
-        lastHealth = playerHealth.Current;
+        AutoAssignReferences();
+
+        if (playerHealth != null)
+        {
+            playerHealth.onHealthChanged.AddListener(UpdateHealthBar);
+            playerHealth.onHit.AddListener(OnPlayerHit);
+            UpdateHealthBar(playerHealth.Current);
+            lastHealth = playerHealth.Current;
+        }
+
+        ResetVignettes();
+    }
+
+    void OnEnable()
+    {
+        ResetVignettes();
+    }
+
+    private void AutoAssignReferences()
+    {
+        // Player
+        if (playerHealth == null)
+            playerHealth = FindObjectOfType<Health>();
+        if (playerMovement == null)
+            playerMovement = FindObjectOfType<PlayerMovement>();
+
+        // Vignettes
+        if (vignetteImage == null)
+            vignetteImage = GameObject.Find("vignette")?.GetComponent<Image>();
+        if (redVignetteImage == null)
+            redVignetteImage = GameObject.Find("redVignette")?.GetComponent<Image>();
+
+        // Overlays (busca por nome, tag ou ordem na hierarquia)
+        if (dashCooldownOverlay == null)
+            dashCooldownOverlay = GameObject.Find("CooldownOverlay")?.GetComponent<Image>();
+        if (liquifyCooldownOverlay == null)
+            liquifyCooldownOverlay = GameObject.Find("CooldownOverlay")?.GetComponent<Image>();
+        if (rCooldownOverlay == null)
+            rCooldownOverlay = GameObject.Find("CooldownOverlay")?.GetComponent<Image>();
+
+        // Health Segments (busca todos filhos com Image e nome começando com "vida")
+        if (healthSegments == null || healthSegments.Length == 0)
+        {
+            var allImages = GetComponentsInChildren<Image>(true);
+            healthSegments = allImages
+                .Where(img => img.name.ToLower().StartsWith("vida"))
+                .OrderBy(img => img.name)
+                .ToArray();
+        }
+    }
+
+    private void ResetVignettes()
+    {
+        if (vignettePulseRoutine != null) StopCoroutine(vignettePulseRoutine);
+        vignettePulseRoutine = null;
+        isLowHealthPulsing = false;
         if (vignetteImage != null) vignetteImage.color = new Color(1, 1, 1, 0);
         if (redVignetteImage != null) redVignetteImage.color = new Color(1, 1, 1, 0);
     }
 
     void Update()
     {
-        dashCooldownOverlay.fillAmount = Mathf.Clamp01(playerMovement.dashCooldownTimer / playerMovement.dashCooldown);
-        liquifyCooldownOverlay.fillAmount = Mathf.Clamp01(playerMovement.liquidCooldownTimer / playerMovement.liquidCooldown);
-        rCooldownOverlay.fillAmount = 0f;
-
-        // Efeito de 1 de vida: só redVignette ativa e pulsando
-        if (playerHealth.Current == 1)
+        if (playerMovement != null)
         {
-            if (!isLowHealthPulsing && redVignetteImage != null)
-            {
-                if (vignettePulseRoutine != null) StopCoroutine(vignettePulseRoutine);
-                vignetteImage.color = new Color(1, 1, 1, 0);
-                vignettePulseRoutine = StartCoroutine(LowHealthRedVignettePulse());
-                isLowHealthPulsing = true;
-            }
+            if (dashCooldownOverlay != null)
+                dashCooldownOverlay.fillAmount = Mathf.Clamp01(playerMovement.dashCooldownTimer / playerMovement.dashCooldown);
+            if (liquifyCooldownOverlay != null)
+                liquifyCooldownOverlay.fillAmount = Mathf.Clamp01(playerMovement.liquidCooldownTimer / playerMovement.liquidCooldown);
+            if (rCooldownOverlay != null)
+                rCooldownOverlay.fillAmount = 0f;
         }
-        else
+
+        if (playerHealth != null)
         {
-            if (isLowHealthPulsing && redVignetteImage != null)
+            // Efeito de 1 de vida: só redVignette ativa e pulsando
+            if (playerHealth.Current == 1)
             {
-                if (vignettePulseRoutine != null) StopCoroutine(vignettePulseRoutine);
-                redVignetteImage.color = new Color(1, 1, 1, 0);
-                isLowHealthPulsing = false;
+                if (!isLowHealthPulsing && redVignetteImage != null)
+                {
+                    if (vignettePulseRoutine != null) StopCoroutine(vignettePulseRoutine);
+                    if (vignetteImage != null) vignetteImage.color = new Color(1, 1, 1, 0);
+                    vignettePulseRoutine = StartCoroutine(LowHealthRedVignettePulse());
+                    isLowHealthPulsing = true;
+                }
+            }
+            else
+            {
+                if (isLowHealthPulsing && redVignetteImage != null)
+                {
+                    if (vignettePulseRoutine != null) StopCoroutine(vignettePulseRoutine);
+                    redVignetteImage.color = new Color(1, 1, 1, 0);
+                    isLowHealthPulsing = false;
+                }
             }
         }
     }
 
     void UpdateHealthBar(int current)
     {
+        if (healthSegments == null) return;
+
         if (lastHealth > current)
         {
             for (int i = current; i < lastHealth; i++)
@@ -89,7 +153,7 @@ public class HUDController : MonoBehaviour
 
     private IEnumerator LoseSegmentEffect(Image segment)
     {
-        Debug.Log("Iniciando LoseSegmentEffect para: " + segment.name);
+        if (segment == null) yield break;
         float elapsed = 0f;
         Color original = segment.color;
         Vector3 originalPos = segment.rectTransform.anchoredPosition;
@@ -108,7 +172,7 @@ public class HUDController : MonoBehaviour
 
     private void OnPlayerHit()
     {
-        if (playerHealth.Current > 1 && vignetteImage != null)
+        if (playerHealth != null && playerHealth.Current > 1 && vignetteImage != null)
         {
             if (vignettePulseRoutine != null) StopCoroutine(vignettePulseRoutine);
             vignettePulseRoutine = StartCoroutine(VignettePulseOnce());
@@ -139,3 +203,4 @@ public class HUDController : MonoBehaviour
         }
     }
 }
+

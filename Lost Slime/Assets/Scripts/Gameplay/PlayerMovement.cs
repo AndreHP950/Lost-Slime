@@ -106,6 +106,7 @@ public class PlayerMovement : MonoBehaviour
         isLiquidified = true;
         liquidCooldownTimer = liquidCooldown;
 
+        moveSpeed = 3f;
         // Visual e hitbox achatados (pool)
         playerCollider.size = new Vector3(originalColliderSize.x * 2f, 0.1f, originalColliderSize.z * 2f);
         playerCollider.center = new Vector3(originalColliderCenter.x, 0.05f, originalColliderCenter.z);
@@ -122,6 +123,7 @@ public class PlayerMovement : MonoBehaviour
         Vector3 currentPos = transform.position;
         transform.position = new Vector3(currentPos.x, 1f, currentPos.z);
 
+        moveSpeed = 5f; // Velocidade normal
         isLiquidified = false;
         Debug.Log("Liqueficação terminada.");
     }

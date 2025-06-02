@@ -4,26 +4,34 @@ using UnityEngine.SceneManagement;
 
 public class Menu : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    [SerializeField] private AudioClip playButtonClip;
 
     public void Play()
     {
-        SceneManager.LoadScene("PrototypeLevel");
+        StartCoroutine(PlayAndLoad());
     }
+
+    private IEnumerator PlayAndLoad()
+    {
+        // Verifica se o AudioManager existe e se o clipe está atribuído
+        if (AudioManager.Instance != null && playButtonClip != null)
+        {
+            AudioManager.Instance.PlaySfx(playButtonClip);
+            yield return new WaitForSeconds(playButtonClip.length);
+        }
+        else
+        {
+            // Se não houver AudioManager ou clipe, apenas espera um pequeno tempo para evitar clique duplo
+            yield return new WaitForSeconds(0.1f);
+        }
+        SceneManager.LoadScene("Level1");
+    }
+
     public void Options()
     {
-        //SceneManager.LoadScene("Options");
+        // SceneManager.LoadScene("Options");
     }
+
     public void Quit()
     {
         Application.Quit();

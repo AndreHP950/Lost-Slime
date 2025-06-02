@@ -27,6 +27,9 @@ public class PlayerDeathController : MonoBehaviour
     [SerializeField] private GameObject deathPanel;
     [SerializeField] private Canvas mainCanvas; // Referência ao Canvas principal
 
+     [SerializeField] private AudioClip damageClip;
+      [SerializeField] private AudioClip healClip;
+      [SerializeField] private AudioClip deathClip;
     private float originalFOV;
     private CinemachineBasicMultiChannelPerlin perlin;
 
@@ -78,7 +81,12 @@ public class PlayerDeathController : MonoBehaviour
         // Efeito de câmera
         if (vCam != null)
             StartCoroutine(DeathCameraEffect());
+
+        // TOCA SOM DE MÚSICA DE MORTE
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayDeathSong();
     }
+
 
     private IEnumerator DeathCameraEffect()
     {

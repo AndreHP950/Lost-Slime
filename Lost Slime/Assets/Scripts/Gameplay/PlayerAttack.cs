@@ -75,5 +75,8 @@ public class PlayerAttack : MonoBehaviour
         Bullet bullet = bulletGO.GetComponent<Bullet>();
         bullet.damage = bulletDamage;
         rb.AddForce(dir * bulletSpeed, ForceMode.Impulse);
+
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayDamage();
     }
 }

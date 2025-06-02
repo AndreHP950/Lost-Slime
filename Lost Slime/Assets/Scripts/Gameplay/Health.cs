@@ -35,8 +35,23 @@ public class Health : MonoBehaviour
         if (amount < 0)
         {
             onHit.Invoke();
+            // TOCA SOM DE DANO
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlayDamage();
+
             if (Current == 0)
+            {
+                // TOCA SOM DE MORTE
+                if (AudioManager.Instance != null)
+                    AudioManager.Instance.PlayDeath();
                 onDied.Invoke();
+            }
+        }
+        else if (amount > 0)
+        {
+            // TOCA SOM DE CURA
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlayHeal();
         }
     }
 }

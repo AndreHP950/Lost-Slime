@@ -3,7 +3,7 @@ using UnityEngine.AI;
 using System.Collections;
 
 [RequireComponent(typeof(NavMeshAgent), typeof(CapsuleCollider))]
-public class EnemyAI : MonoBehaviour
+public class Enemy3AI : MonoBehaviour
 {
     [Header("Patrol")]
     [SerializeField] private float patrolSpeed = 3f;
@@ -13,12 +13,13 @@ public class EnemyAI : MonoBehaviour
 
     [Header("Shooting")]
     [SerializeField] private GameObject bulletPrefab;
-    [SerializeField] private float bulletSpeed = 10f;
-    [SerializeField] private int bulletCount = 1;  // Shoot one bullet at a time for now
-    [SerializeField] private float timeBetweenShots = 0.5f;  // Faster shooting rate
+    [SerializeField] private float bulletSpeed = 12f; // Mais rápido
+    [SerializeField] private float shootCooldown = 3f; // Cooldown entre rajadas
+    [SerializeField] private int bulletsPerShot = 3;   // 3 projéteis por vez
+    [SerializeField] private float spreadAngle = 15f;  // Ângulo de abertura do raio
 
     [Header("Enemy Stats")]
-    [SerializeField] private float health = 5f;
+    [SerializeField] private float health = 10f;
     [SerializeField] private float sightRange = 10f;
     [SerializeField] private float attackRange = 5f;
 
@@ -27,6 +28,7 @@ public class EnemyAI : MonoBehaviour
     private Transform player;
     private bool isWaiting;
     private bool isDead;
+    private float shootTimer = 0f;
 
     void Awake()
     {
@@ -34,7 +36,7 @@ public class EnemyAI : MonoBehaviour
         navMeshAgent.speed = patrolSpeed;
         navMeshAgent.stoppingDistance = 0.5f;
         navMeshAgent.updateRotation = false;
-        player = GameObject.Find("Player").transform;  // Ensure player is named "PlayerObj"
+        player = GameObject.Find("Player").transform;
     }
 
     void Start()
@@ -47,7 +49,10 @@ public class EnemyAI : MonoBehaviour
     {
         if (isDead) return;
 
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+        float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
+
+        if (shootTimer > 0f)
+            shootTimer -= Time.deltaTime;
 
         if (distanceToPlayer <= attackRange)
         {
@@ -78,13 +83,10 @@ public class EnemyAI : MonoBehaviour
         isWaiting = true;
         navMeshAgent.isStopped = true;
 
-        // Wait before shooting
         yield return new WaitForSeconds(waitTimeAtPoint);
 
-        // Shoot towards the player
         ShootAtPlayer();
 
-        // Pick the next patrol point and continue patrolling
         patrolTarget = PickPatrolPoint();
         navMeshAgent.SetDestination(patrolTarget);
         navMeshAgent.isStopped = false;
@@ -114,44 +116,42 @@ public class EnemyAI : MonoBehaviour
 
     private void AttackPlayer()
     {
-        // Rotaciona apenas no eixo Y
         Vector3 lookPos = player.position - transform.position;
         lookPos.y = 0f;
         if (lookPos != Vector3.zero)
             transform.rotation = Quaternion.LookRotation(lookPos);
 
-        if (!isWaiting)
+        if (shootTimer <= 0f)
         {
             ShootAtPlayer();
-            StartCoroutine(ShootCooldown());
+            shootTimer = shootCooldown;
         }
     }
 
     private void ShootAtPlayer()
     {
-        // Calcula direção apenas no plano XZ (paralelo ao chão)
+        // Direção base (plano XZ)
         Vector3 direction = player.position - transform.position;
-        direction.y = 0f; // ignora diferença de altura
+        direction.y = 0f;
         direction = direction.normalized;
 
-        Vector3 spawnPos = transform.position + direction * 1.5f;
+        float startAngle = -spreadAngle * 0.5f;
+        float angleStep = bulletsPerShot > 1 ? spreadAngle / (bulletsPerShot - 1) : 0f;
 
-        GameObject bullet = Instantiate(bulletPrefab, spawnPos, Quaternion.identity);
-        Rigidbody rb = bullet.GetComponent<Rigidbody>();
-        if (rb != null)
+        for (int i = 0; i < bulletsPerShot; i++)
         {
-            rb.linearVelocity = direction * bulletSpeed;
+            float angle = startAngle + angleStep * i;
+            Vector3 dir = Quaternion.Euler(0, angle, 0) * direction;
+            Vector3 spawnPos = transform.position + dir * 1.5f;
+
+            GameObject bullet = Instantiate(bulletPrefab, spawnPos, Quaternion.identity);
+            Rigidbody rb = bullet.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = dir * bulletSpeed;
+            }
         }
     }
-
-
-    private IEnumerator ShootCooldown()
-    {
-        isWaiting = true;
-        yield return new WaitForSeconds(timeBetweenShots);
-        isWaiting = false;
-    }
-
 
     // Draw gizmos to help adjust in the Inspector
     void OnDrawGizmosSelected()
