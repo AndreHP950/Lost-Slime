@@ -1,7 +1,8 @@
 ﻿using UnityEngine;
+using UnityEngine.AI;
 using System.Collections;
 
-[RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
+[RequireComponent(typeof(NavMeshAgent), typeof(CapsuleCollider))]
 public class EnemyPatrolShoot : MonoBehaviour
 {
     [Header("Patrulha")]
@@ -24,51 +25,52 @@ public class EnemyPatrolShoot : MonoBehaviour
     [Tooltip("Quantas balas em círculo (ex.: 8 = 360°/8 a cada tiro)")]
     [SerializeField] private int bulletCount = 8;
 
-    // componentes e estado
-    private Rigidbody rb;
+    // Components and state
+    private NavMeshAgent navMeshAgent;
     private Vector3 patrolTarget;
     private Vector3 houseCenter;
     private bool isWaiting;
 
     void Awake()
     {
-        rb = GetComponent<Rigidbody>();
-        rb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionY;
-        // centro da casa = posição inicial
+        navMeshAgent = GetComponent<NavMeshAgent>();
+        navMeshAgent.speed = patrolSpeed;
+        navMeshAgent.stoppingDistance = 0.5f;
+
+        // Center of the patrol area is the initial position
         houseCenter = transform.position;
     }
 
     void Start()
     {
         patrolTarget = PickPatrolPoint();
+        navMeshAgent.SetDestination(patrolTarget);
     }
 
-    void FixedUpdate()
+    void Update()
     {
         if (isWaiting) return;
 
-        // anda rumo ao ponto
-        Vector3 toTarget = patrolTarget - transform.position;
-        toTarget.y = 0f;
-        if (toTarget.magnitude > 0.5f)
+        // Check if the agent has reached the destination
+        if (!navMeshAgent.pathPending && navMeshAgent.remainingDistance <= navMeshAgent.stoppingDistance)
         {
-            Vector3 dir = toTarget.normalized;
-            rb.MovePosition(rb.position + dir * patrolSpeed * Time.fixedDeltaTime);
-        }
-        else
-        {
-            // chegou: espera e dispara
-            StartCoroutine(DwellAndShoot());
+            if (!navMeshAgent.hasPath || navMeshAgent.velocity.sqrMagnitude == 0f)
+            {
+                // Reached the patrol point: wait and shoot
+                StartCoroutine(DwellAndShoot());
+            }
         }
     }
 
     private IEnumerator DwellAndShoot()
     {
         isWaiting = true;
-        // 1) espera antes de atirar (opcional)
+        navMeshAgent.isStopped = true;
+
+        // 1) Wait before shooting
         yield return new WaitForSeconds(waitTimeAtPoint * 0.5f);
 
-        // 2) dispara em círculo
+        // 2) Shoot in a circle
         for (int i = 0; i < bulletCount; i++)
         {
             float angle = 360f / bulletCount * i;
@@ -76,13 +78,13 @@ public class EnemyPatrolShoot : MonoBehaviour
             Vector3 spawnPos = transform.position + dir * spawnOffset;
 
             var proj = Instantiate(bulletPrefab, spawnPos, Quaternion.LookRotation(dir));
-            // ignora colisão com este inimigo
+            // Ignore collision with this enemy
             var colProj = proj.GetComponent<Collider>();
             var colSelf = GetComponent<Collider>();
             if (colProj != null && colSelf != null)
                 Physics.IgnoreCollision(colProj, colSelf);
 
-            // configura velocidade
+            // Set bullet velocity
             var rbProj = proj.GetComponent<Rigidbody>();
             if (rbProj != null)
             {
@@ -91,11 +93,13 @@ public class EnemyPatrolShoot : MonoBehaviour
             }
         }
 
-        // 3) espera o restante do tempo
+        // 3) Wait the remaining time
         yield return new WaitForSeconds(waitTimeAtPoint * 0.5f);
 
-        // 4) escolhe próximo ponto e segue patrulha
+        // 4) Pick the next patrol point and resume patrol
         patrolTarget = PickPatrolPoint();
+        navMeshAgent.SetDestination(patrolTarget);
+        navMeshAgent.isStopped = false;
         isWaiting = false;
     }
 
@@ -115,13 +119,13 @@ public class EnemyPatrolShoot : MonoBehaviour
         return pt;
     }
 
-    // Desenha gizmos para ajudar a ajustar no Inspector
+    // Draw gizmos to help adjust in the Inspector
     void OnDrawGizmosSelected()
     {
-        // casa
+        // Patrol area
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireCube(houseCenter, houseSize);
-        // ponto de destino
+        // Destination point
         if (Application.isPlaying)
         {
             Gizmos.color = Color.magenta;

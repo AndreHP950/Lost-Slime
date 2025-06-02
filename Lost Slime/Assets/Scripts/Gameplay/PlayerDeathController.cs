@@ -25,7 +25,11 @@ public class PlayerDeathController : MonoBehaviour
     [Header("UI")]
     [Tooltip("Root panel with black overlay + YOU DIED text")]
     [SerializeField] private GameObject deathPanel;
+    [SerializeField] private Canvas mainCanvas; // Referência ao Canvas principal
 
+     [SerializeField] private AudioClip damageClip;
+      [SerializeField] private AudioClip healClip;
+      [SerializeField] private AudioClip deathClip;
     private float originalFOV;
     private CinemachineBasicMultiChannelPerlin perlin;
 
@@ -55,18 +59,34 @@ public class PlayerDeathController : MonoBehaviour
 
     private void OnPlayerDied()
     {
-        // disable controls
+        // Desativa controles
         movement.enabled = false;
         attack.enabled = false;
 
-        // show the black panel + text
+        // Desativa todos os filhos do Canvas, exceto o deathPanel
+        if (mainCanvas != null)
+        {
+            foreach (Transform child in mainCanvas.transform)
+            {
+                if (deathPanel != null && child.gameObject == deathPanel)
+                    continue;
+                child.gameObject.SetActive(false);
+            }
+        }
+
+        // Ativa o painel de morte
         if (deathPanel != null)
             deathPanel.SetActive(true);
 
-        // trigger camera effect
+        // Efeito de câmera
         if (vCam != null)
             StartCoroutine(DeathCameraEffect());
+
+        // TOCA SOM DE MÚSICA DE MORTE
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayDeathSong();
     }
+
 
     private IEnumerator DeathCameraEffect()
     {

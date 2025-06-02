@@ -5,126 +5,128 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Configuração de Movimento")]
-    [SerializeField] private float moveSpeed = 5f;    // Velocidade de movimento
-    [SerializeField] private float dashSpeed = 10f;    // Velocidade do dash
-    [SerializeField] private float dashCooldown = 1f;  // Tempo de cooldown para usar o dash
-    private float dashCooldownTimer = 0f;              // Controle do tempo de cooldown do dash
-    private int dashCount = 3;                         // Número de dashes disponíveis
+    [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float dashSpeed = 10f;
+    [SerializeField] public float dashCooldown = 1f;
+    public bool isDashing = false;
+    public float dashCooldownTimer = 0f;
+    private int dashCount = 3;
 
     [Header("Configuração de Liqueficação")]
-    [SerializeField] private float liquidDuration = 2f;  // Duração da liqueficação
-    [SerializeField] private float liquidCooldown = 5f;  // Tempo de cooldown para usar a liqueficação
-    private float liquidCooldownTimer = 0f;             // Controle do tempo de cooldown da liqueficação
-    private bool isLiquidified = false;                 // Flag para verificar se o jogador está liquefeito
-    private BoxCollider playerCollider;            // Referência ao BoxCollider para modificação
-    private Vector3 originalColliderSize;          // Tamanho original do colisor
-    private Vector3 originalColliderCenter;        // Centro original do colisor
-
+    [SerializeField] private float liquidDuration = 2f;
+    [SerializeField] public float liquidCooldown = 5f;
+    public float liquidCooldownTimer = 0f;
+    private bool isLiquidified = false;
+    private BoxCollider playerCollider;
+    private Vector3 originalColliderSize;
+    private Vector3 originalColliderCenter;
+    private Vector3 originalScale;
 
     private Rigidbody rb;
     private Vector3 inputVector;
+    private Health health;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        rb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionY;        // Impede rotação indesejada
-        playerCollider = GetComponent<BoxCollider>();  // Referência ao colisor do jogador
+        rb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionY;
+        playerCollider = GetComponent<BoxCollider>();
+        health = GetComponent<Health>();
 
-        // Armazenando o tamanho e o centro do colisor
         originalColliderSize = playerCollider.size;
         originalColliderCenter = playerCollider.center;
-
+        originalScale = transform.localScale;
     }
 
     void Update()
     {
-        // Leitura de input para movimento (WASD / setas)
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
         inputVector = new Vector3(h, 0f, v).normalized;
 
-        // Verifica se o jogador apertou o botão de dash
         if (Input.GetKeyDown(KeyCode.Space) && dashCount > 0 && dashCooldownTimer <= 0f)
         {
             Dash();
         }
 
-        // Verifica se o jogador apertou o botão de liqueficação (Q)
         if (Input.GetKeyDown(KeyCode.Q) && !isLiquidified && liquidCooldownTimer <= 0f)
         {
             StartCoroutine(Liquidify());
         }
 
-        // Atualiza o tempo de cooldown do dash
         if (dashCooldownTimer > 0f)
             dashCooldownTimer -= Time.deltaTime;
 
-        // Atualiza o tempo de cooldown da liqueficação
         if (liquidCooldownTimer > 0f)
             liquidCooldownTimer -= Time.deltaTime;
     }
 
-
     void FixedUpdate()
     {
-        // Movimenta o jogador
         rb.MovePosition(rb.position + inputVector * moveSpeed * Time.fixedDeltaTime);
     }
 
-    // Função que realiza o Dash
-
     void Dash()
     {
-        dashCooldownTimer = dashCooldown;  // Resetando o cooldown para o uso do dash  
-        dashCount--;                        // Decrementa o número de dashes disponíveis  
+        isDashing = true;
+        dashCooldownTimer = dashCooldown;
+        dashCount--;
 
-        // Dash em direção à frente do jogador (direção de movimento)  
+        if (health != null)
+            health.isImmune = true;
+
         Vector3 dashVector = inputVector * dashSpeed;
-        rb.linearVelocity = new Vector3(dashVector.x, rb.linearVelocity.y, dashVector.z);  // Aplica o dash  
+        rb.linearVelocity = new Vector3(dashVector.x, rb.linearVelocity.y, dashVector.z);
 
         Debug.Log("Dash realizado! Restam " + dashCount + " dashes.");
 
-        // Inicia a recarga do dash  
+        StartCoroutine(EndDash());
+    }
+
+    private IEnumerator EndDash()
+    {
+        yield return new WaitForSeconds(0.5f); // duração do dash
+
+        isDashing = false;
+        if (health != null)
+            health.isImmune = false;
+
         StartCoroutine(RechargeDash());
     }
 
     private IEnumerator RechargeDash()
     {
-        yield return new WaitForSeconds(6);
-        dashCount++;  // Recarrega o dash após 3 segundos  
+        yield return new WaitForSeconds(5.5f); // tempo para recarregar dash
+        dashCount++;
         Debug.Log("Dash recarregado! Dashes disponíveis: " + dashCount);
     }
 
-
-    // Função que realiza a liqueficação
     private IEnumerator Liquidify()
     {
         isLiquidified = true;
-        liquidCooldownTimer = liquidCooldown; // Reseta o cooldown da liqueficação
+        liquidCooldownTimer = liquidCooldown;
 
-        // Modificando o colisor para o jogador "ficar achatado" e expandido para os lados
-        playerCollider.size = new Vector3(playerCollider.size.x * 2f, 0.1f, playerCollider.size.z * 2f);
-        playerCollider.center = new Vector3(playerCollider.center.x, 0.1f, playerCollider.center.z);
+        moveSpeed = 3f;
+        // Visual e hitbox achatados (pool)
+        playerCollider.size = new Vector3(originalColliderSize.x * 2f, 0.1f, originalColliderSize.z * 2f);
+        playerCollider.center = new Vector3(originalColliderCenter.x, 0.05f, originalColliderCenter.z);
+        transform.localScale = new Vector3(originalScale.x * 2f, 0.1f, originalScale.z * 2f);
 
-        // Espera o tempo de liqueficação acabar
         yield return new WaitForSeconds(liquidDuration);
 
-        // Restaura o tamanho e posição do colisor
+        // Restaurar visual e hitbox
         playerCollider.size = originalColliderSize;
         playerCollider.center = originalColliderCenter;
+        transform.localScale = originalScale;
 
-        // Garantir que o jogador volte para uma altura normal no Y
+        // Garante altura padrão
         Vector3 currentPos = transform.position;
-        transform.position = new Vector3(currentPos.x, 1f, currentPos.z); // Altura padrão 1f
+        transform.position = new Vector3(currentPos.x, 1f, currentPos.z);
 
+        moveSpeed = 5f; // Velocidade normal
         isLiquidified = false;
         Debug.Log("Liqueficação terminada.");
     }
+    public bool IsLiquidified => isLiquidified;
 
-
-    // Função para recarregar os dashes individualmente após um tempo
-    public void RechargeDashes()
-    {
-        dashCount = 3;  // Restaurar a quantidade de dashes
-    }
 }

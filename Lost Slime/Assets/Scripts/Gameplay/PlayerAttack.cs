@@ -1,4 +1,3 @@
-// Assets/Scripts/Gameplay/PlayerAttack.cs
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerMovement))]
@@ -20,6 +19,12 @@ public class PlayerAttack : MonoBehaviour
     [SerializeField] private bool isAuto = false;
 
     private float cooldownTimer = 0f;
+    private PlayerMovement playerMovement;
+
+    void Awake()
+    {
+        playerMovement = GetComponent<PlayerMovement>();
+    }
 
     void Update()
     {
@@ -32,7 +37,8 @@ public class PlayerAttack : MonoBehaviour
             ? Input.GetButton("Fire1")
             : Input.GetButtonDown("Fire1");
 
-        if (wantShoot && cooldownTimer <= 0f)
+        // Só atira se o cooldown permitir e se o player não estiver liquidificado.
+        if (wantShoot && cooldownTimer <= 0f && !playerMovement.IsLiquidified)
         {
             Vector3 dir = GetMouseDirection();
             Shoot(dir);
@@ -50,12 +56,11 @@ public class PlayerAttack : MonoBehaviour
         {
             Vector3 hitPoint = ray.GetPoint(enter);
             Vector3 dir = hitPoint - transform.position;
-            dir.y = 0;                // anula componente vertical
-            return dir.normalized;    // normaliza já “plano”
+            dir.y = 0;  // anula componente vertical
+            return dir.normalized;
         }
         return transform.forward;
     }
-
 
     private void Shoot(Vector3 dir)
     {
@@ -63,16 +68,15 @@ public class PlayerAttack : MonoBehaviour
         Vector3 spawnPos = transform.position + dir * spawnOffset;
 
         // instancia bullet
-        var bulletGO = Instantiate(
-            bulletPrefab,
-            spawnPos,
-            Quaternion.LookRotation(dir)
-        );
+        GameObject bulletGO = Instantiate(bulletPrefab, spawnPos, Quaternion.LookRotation(dir));
 
         // configura velocidade e dano
-        var rb = bulletGO.GetComponent<Rigidbody>();
-        var bullet = bulletGO.GetComponent<Bullet>();
+        Rigidbody rb = bulletGO.GetComponent<Rigidbody>();
+        Bullet bullet = bulletGO.GetComponent<Bullet>();
         bullet.damage = bulletDamage;
         rb.AddForce(dir * bulletSpeed, ForceMode.Impulse);
+
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayDamage();
     }
 }
