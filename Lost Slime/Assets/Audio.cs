@@ -14,6 +14,7 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip healClip;
     [SerializeField] private AudioClip deathClip;
     [SerializeField] private AudioClip deathSongClip;
+    [SerializeField] private AudioClip slimeWalkClip;
 
     void Awake()
     {
@@ -49,4 +50,7 @@ public class AudioManager : MonoBehaviour
     public void PlayHeal() => PlaySfx(healClip);
     public void PlayDeath() => PlaySfx(deathClip);
     public void PlayDeathSong() => PlaySfx(deathSongClip);
+
+    public void PlaySlimeWalk() => PlaySfx(slimeWalkClip);
+
 }

@@ -26,6 +26,9 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 inputVector;
     private Health health;
 
+    // Armazena a velocidade base para ser usada como referência no multiplicador
+    private float baseMoveSpeed;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -36,6 +39,9 @@ public class PlayerMovement : MonoBehaviour
         originalColliderSize = playerCollider.size;
         originalColliderCenter = playerCollider.center;
         originalScale = transform.localScale;
+
+        // Armazena a velocidade original definida no Inspector
+        baseMoveSpeed = moveSpeed;
     }
 
     void Update()
@@ -123,10 +129,26 @@ public class PlayerMovement : MonoBehaviour
         Vector3 currentPos = transform.position;
         transform.position = new Vector3(currentPos.x, 1f, currentPos.z);
 
-        moveSpeed = 5f; // Velocidade normal
+        moveSpeed = baseMoveSpeed; // Velocidade normal restaurada
         isLiquidified = false;
         Debug.Log("Liqueficação terminada.");
     }
     public bool IsLiquidified => isLiquidified;
 
+    /// <summary>
+    /// Aplica um multiplicador na velocidade de movimento.
+    /// Por exemplo, um multiplicador de 0.3 fará o jogador andar a 30% da velocidade normal.
+    /// </summary>
+    public void ApplySpeedMultiplier(float multiplier)
+    {
+        moveSpeed = baseMoveSpeed * multiplier;
+    }
+
+    /// <summary>
+    /// Remove o multiplicador de velocidade, restaurando a velocidade base.
+    /// </summary>
+    public void RemoveSpeedMultiplier()
+    {
+        moveSpeed = baseMoveSpeed;
+    }
 }
