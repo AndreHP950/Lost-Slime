@@ -3,7 +3,7 @@ using UnityEngine.AI;
 using System.Collections;
 using System.Collections.Generic;
 
-[RequireComponent(typeof(NavMeshAgent), typeof(CapsuleCollider), typeof(Health))]
+[RequireComponent(typeof(NavMeshAgent), typeof(SphereCollider), typeof(Health))]
 public class BombEnemyAI : MonoBehaviour
 {
     [Header("Configuração")]
