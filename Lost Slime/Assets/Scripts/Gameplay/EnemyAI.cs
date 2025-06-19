@@ -14,6 +14,8 @@ public class EnemyPatrolShoot : MonoBehaviour
     [SerializeField] private float minPatrolDistance = 2f;
     [Tooltip("Tempo que ele espera ao chegar no ponto antes de atirar e seguir")]
     [SerializeField] private float waitTimeAtPoint = 2f;
+    [Tooltip("Tempo máximo tentando chegar no ponto de patrulha (segundos)")]
+    [SerializeField] private float maxTimeToReachPoint = 5f;
 
     [Header("Ataque ao chegar")]
     [Tooltip("Prefab da bala")]
@@ -30,6 +32,8 @@ public class EnemyPatrolShoot : MonoBehaviour
     private Vector3 patrolTarget;
     private Vector3 houseCenter;
     private bool isWaiting;
+    private float patrolStartTime;
+    private Coroutine patrolTimeoutRoutine;
 
     void Awake()
     {
@@ -43,23 +47,36 @@ public class EnemyPatrolShoot : MonoBehaviour
 
     void Start()
     {
-        patrolTarget = PickPatrolPoint();
-        navMeshAgent.SetDestination(patrolTarget);
+        SetNewPatrolTarget();
     }
 
     void Update()
     {
         if (isWaiting) return;
 
+        // Timeout: se passou do tempo máximo, escolhe outro ponto
+        if (Time.time - patrolStartTime > maxTimeToReachPoint)
+        {
+            Debug.Log($"{name} desistiu do ponto de patrulha (timeout).");
+            SetNewPatrolTarget();
+            return;
+        }
+
         // Check if the agent has reached the destination
         if (!navMeshAgent.pathPending && navMeshAgent.remainingDistance <= navMeshAgent.stoppingDistance)
         {
             if (!navMeshAgent.hasPath || navMeshAgent.velocity.sqrMagnitude == 0f)
             {
-                // Reached the patrol point: wait and shoot
                 StartCoroutine(DwellAndShoot());
             }
         }
+    }
+
+    private void SetNewPatrolTarget()
+    {
+        patrolTarget = PickPatrolPoint();
+        navMeshAgent.SetDestination(patrolTarget);
+        patrolStartTime = Time.time;
     }
 
     private IEnumerator DwellAndShoot()
@@ -67,10 +84,8 @@ public class EnemyPatrolShoot : MonoBehaviour
         isWaiting = true;
         navMeshAgent.isStopped = true;
 
-        // 1) Wait before shooting
         yield return new WaitForSeconds(waitTimeAtPoint * 0.5f);
 
-        // 2) Shoot in a circle
         for (int i = 0; i < bulletCount; i++)
         {
             float angle = 360f / bulletCount * i;
@@ -78,13 +93,11 @@ public class EnemyPatrolShoot : MonoBehaviour
             Vector3 spawnPos = transform.position + dir * spawnOffset;
 
             var proj = Instantiate(bulletPrefab, spawnPos, Quaternion.LookRotation(dir));
-            // Ignore collision with this enemy
             var colProj = proj.GetComponent<Collider>();
             var colSelf = GetComponent<Collider>();
             if (colProj != null && colSelf != null)
                 Physics.IgnoreCollision(colProj, colSelf);
 
-            // Set bullet velocity
             var rbProj = proj.GetComponent<Rigidbody>();
             if (rbProj != null)
             {
@@ -93,14 +106,11 @@ public class EnemyPatrolShoot : MonoBehaviour
             }
         }
 
-        // 3) Wait the remaining time
         yield return new WaitForSeconds(waitTimeAtPoint * 0.5f);
 
-        // 4) Pick the next patrol point and resume patrol
-        patrolTarget = PickPatrolPoint();
-        navMeshAgent.SetDestination(patrolTarget);
         navMeshAgent.isStopped = false;
         isWaiting = false;
+        SetNewPatrolTarget();
     }
 
     private Vector3 PickPatrolPoint()
@@ -119,13 +129,10 @@ public class EnemyPatrolShoot : MonoBehaviour
         return pt;
     }
 
-    // Draw gizmos to help adjust in the Inspector
     void OnDrawGizmosSelected()
     {
-        // Patrol area
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireCube(houseCenter, houseSize);
-        // Destination point
         if (Application.isPlaying)
         {
             Gizmos.color = Color.magenta;
