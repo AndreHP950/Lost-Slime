@@ -111,10 +111,10 @@ MonoBehaviour:
   - title: Wind Force
     position:
       serializedVersion: 2
-      x: 1119
-      y: 372
-      width: 603
-      height: 372
+      x: 1147
+      y: 437
+      width: 674
+      height: 363
     contents:
     - model: {fileID: 8926484042661616522}
       id: 0
@@ -4870,7 +4870,7 @@ MonoBehaviour:
   m_UIIgnoredErrors: []
   m_Parent: {fileID: 114350483966674976}
   m_Children: []
-  m_UIPosition: {x: 1455, y: 579}
+  m_UIPosition: {x: 1484, y: 645}
   m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_InputSlots:
@@ -4942,7 +4942,7 @@ MonoBehaviour:
   m_UIIgnoredErrors: []
   m_Parent: {fileID: 114350483966674976}
   m_Children: []
-  m_UIPosition: {x: 1144, y: 431}
+  m_UIPosition: {x: 1173, y: 497}
   m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_InputSlots:
@@ -7454,7 +7454,7 @@ MonoBehaviour:
   m_UIIgnoredErrors: []
   m_Parent: {fileID: 114350483966674976}
   m_Children: []
-  m_UIPosition: {x: 1177, y: 549}
+  m_UIPosition: {x: 1206, y: 615}
   m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_InputSlots:
