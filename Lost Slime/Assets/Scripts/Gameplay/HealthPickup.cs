@@ -4,7 +4,7 @@ public class HealthPickup : MonoBehaviour
 {
     [Header("Configuração do Pickup")]
     [SerializeField] private int healAmount = 1;
-    [SerializeField] private Color flashColor = Color.green;
+    private Color flashColor = new Color(0f, 0.3f, 0f, 1f);
     [SerializeField] private float flashDuration = 0.2f;
 
     [Header("Referências")]

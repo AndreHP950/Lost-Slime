@@ -150,6 +150,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   healAmount: 1
-  flashColor: {r: 0, g: 1, b: 0, a: 1}
+  flashColor: {r: 0, g: 0.7264151, b: 0, a: 1}
   flashDuration: 0.2
   targetHealth: {fileID: 0}
