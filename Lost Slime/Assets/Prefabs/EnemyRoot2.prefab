@@ -105,13 +105,13 @@ MonoBehaviour:
   patrolAreaSize: {x: 10, y: 1, z: 10}
   minPatrolDistance: 2
   waitTimeAtPoint: 2
-  bulletPrefab: {fileID: 3178784342664602129, guid: a09c567d4bd4c4f40a98e02439fc3cdc, type: 3}
+  bulletPrefab: {fileID: 4840324717109388853, guid: 0528e5de6cfaff84db09536d6bbb6bc4, type: 3}
   bulletSpeed: 5
   bulletCount: 3
   timeBetweenShots: 0.5
   health: 5
-  sightRange: 10
-  attackRange: 5
+  sightRange: 12
+  attackRange: 8
 --- !u!114 &5717437683961253025
 MonoBehaviour:
   m_ObjectHideFlags: 0

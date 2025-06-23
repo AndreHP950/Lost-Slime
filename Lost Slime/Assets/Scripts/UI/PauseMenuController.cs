@@ -15,15 +15,25 @@ public class PauseMenuController : MonoBehaviour
     [SerializeField] private Image pauseVignette;    // Overlay para escurecer a tela
     [SerializeField] private float pauseVignetteAlpha = 0.3f; // Valor de alpha para o overlay
 
+    [Header("Scene Elements")]
+    [SerializeField] private GameObject canvasObject;  // Referência ao Canvas
+    [SerializeField] private GameObject groundObject;  // Referência ao chão com bake do NavMesh
+
     private bool isPaused = false;
 
     void Start()
     {
-        // Garante que o painel de pause e o overlay estejam desativados/invisíveis ao iniciar a cena
+        // Desativa o painel de pause e o overlay ao iniciar
         if (pausePanel != null)
             pausePanel.SetActive(false);
         if (pauseVignette != null)
             pauseVignette.color = new Color(0, 0, 0, 0);
+
+        // Ativa o Canvas e o chão automaticamente ao iniciar o jogo
+
+            canvasObject.SetActive(true);
+
+            groundObject.SetActive(true);
 
         // Configura o slider de volume
         if (volumeSlider != null)
@@ -95,6 +105,19 @@ public class PauseMenuController : MonoBehaviour
     public void SetVolume(float value)
     {
         AudioListener.volume = value;
+    }
+
+    // Método para iniciar o jogo
+    public void StartGame()
+    {
+        // Ativa Canvas e chão quando o jogo iniciar
+        if (canvasObject != null)
+            canvasObject.SetActive(true);
+        if (groundObject != null)
+            groundObject.SetActive(true);
+
+        // Fecha o menu e retoma o jogo (se necessário)
+        Resume();
     }
 
     // Tenta carregar a cena desejada. Se já estiver na cena, apenas fecha o painel.

@@ -31,6 +31,10 @@ public class PlayerMovement : MonoBehaviour
     // Armazena a velocidade base para ser usada como referência no multiplicador
     private float baseMoveSpeed;
 
+    // Armazena a altura (Y) original do jogador e o nível do chão
+    private float originalY;
+    private float originalGroundY;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -41,6 +45,8 @@ public class PlayerMovement : MonoBehaviour
         originalColliderSize = playerCollider.size;
         originalColliderCenter = playerCollider.center;
         originalScale = transform.localScale;
+        originalY = transform.position.y; // Pivô original do jogador
+        originalGroundY = originalY - (originalScale.y * 0.5f); // Supõe que o pivô está centralizado
 
         // Armazena a velocidade original definida no Inspector
         baseMoveSpeed = moveSpeed;
@@ -70,6 +76,7 @@ public class PlayerMovement : MonoBehaviour
         if (liquidCooldownTimer > 0f)
             liquidCooldownTimer -= Time.deltaTime;
     }
+
     private void RotateTowardsCursor()
     {
         Plane groundPlane = new Plane(Vector3.up, new Vector3(0, transform.position.y, 0));
@@ -91,8 +98,6 @@ public class PlayerMovement : MonoBehaviour
             }
         }
     }
-
-
 
     void FixedUpdate()
     {
@@ -140,10 +145,15 @@ public class PlayerMovement : MonoBehaviour
         liquidCooldownTimer = liquidCooldown;
 
         moveSpeed = 3f;
-        // Visual e hitbox achatados (pool)
-        playerCollider.size = new Vector3(originalColliderSize.x * 2f, 0.1f, originalColliderSize.z * 2f);
-        playerCollider.center = new Vector3(originalColliderCenter.x, 0.05f, originalColliderCenter.z);
-        transform.localScale = new Vector3(originalScale.x * 2f, 0.1f, originalScale.z * 2f);
+        // Visual e hitbox achatados com Y ainda menor (diminui para 5% da altura original)
+        playerCollider.size = new Vector3(originalColliderSize.x * 2f, 0.05f, originalColliderSize.z * 2f);
+        playerCollider.center = new Vector3(originalColliderCenter.x, 0.025f, originalColliderCenter.z);
+        transform.localScale = new Vector3(originalScale.x * 2f, 0.05f, originalScale.z * 2f);
+
+        // Ajusta a posição para que o jogador fique "no chão"
+        Vector3 currentPos = transform.position;
+        float liquefiedY = (transform.localScale.y * 0.5f) + originalGroundY;
+        transform.position = new Vector3(currentPos.x, liquefiedY, currentPos.z);
 
         yield return new WaitForSeconds(liquidDuration);
 
@@ -152,14 +162,15 @@ public class PlayerMovement : MonoBehaviour
         playerCollider.center = originalColliderCenter;
         transform.localScale = originalScale;
 
-        // Garante altura padrão
-        Vector3 currentPos = transform.position;
-        transform.position = new Vector3(currentPos.x, 1f, currentPos.z);
+        // Restaura a posição Y original
+        currentPos = transform.position;
+        transform.position = new Vector3(currentPos.x, originalY, currentPos.z);
 
         moveSpeed = baseMoveSpeed; // Velocidade normal restaurada
         isLiquidified = false;
         Debug.Log("Liqueficação terminada.");
     }
+
     public bool IsLiquidified => isLiquidified;
 
     /// <summary>

@@ -121,7 +121,17 @@ public class Enemy3AI : MonoBehaviour
     private void ChasePlayer()
     {
         navMeshAgent.SetDestination(player.position);
+
+        // Rotaciona para a direção do movimento enquanto persegue o jogador
+        Vector3 moveDir = navMeshAgent.desiredVelocity;
+        moveDir.y = 0f;
+        if (moveDir.sqrMagnitude > 0.01f)
+        {
+            Quaternion targetRot = Quaternion.LookRotation(moveDir);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 8f);
+        }
     }
+
 
     private void AttackPlayer()
     {
