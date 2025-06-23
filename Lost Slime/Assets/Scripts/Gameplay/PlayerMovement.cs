@@ -8,6 +8,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float dashSpeed = 10f;
     [SerializeField] public float dashCooldown = 1f;
+    [SerializeField] private Transform slimeTransform;
     public bool isDashing = false;
     public float dashCooldownTimer = 0f;
     private int dashCount = 3;
@@ -15,6 +16,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Configuração de Liqueficação")]
     [SerializeField] private float liquidDuration = 2f;
     [SerializeField] public float liquidCooldown = 5f;
+
     public float liquidCooldownTimer = 0f;
     private bool isLiquidified = false;
     private BoxCollider playerCollider;
@@ -50,6 +52,8 @@ public class PlayerMovement : MonoBehaviour
         float v = Input.GetAxis("Vertical");
         inputVector = new Vector3(h, 0f, v).normalized;
 
+        RotateTowardsCursor();
+
         if (Input.GetKeyDown(KeyCode.Space) && dashCount > 0 && dashCooldownTimer <= 0f)
         {
             Dash();
@@ -66,6 +70,29 @@ public class PlayerMovement : MonoBehaviour
         if (liquidCooldownTimer > 0f)
             liquidCooldownTimer -= Time.deltaTime;
     }
+    private void RotateTowardsCursor()
+    {
+        Plane groundPlane = new Plane(Vector3.up, new Vector3(0, transform.position.y, 0));
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+        float enter;
+        if (groundPlane.Raycast(ray, out enter))
+        {
+            Vector3 hitPoint = ray.GetPoint(enter);
+            Vector3 lookDir = hitPoint - transform.position;
+            lookDir.y = 0f;
+
+            if (lookDir.sqrMagnitude > 0.01f && slimeTransform != null)
+            {
+                Quaternion targetRot = Quaternion.LookRotation(lookDir);
+                // Mantém o -90 em X, aplica só o Y do targetRot
+                Vector3 euler = targetRot.eulerAngles;
+                slimeTransform.rotation = Quaternion.Euler(-90f, euler.y, 0f);
+            }
+        }
+    }
+
+
 
     void FixedUpdate()
     {

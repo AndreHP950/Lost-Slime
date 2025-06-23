@@ -67,11 +67,21 @@ public class EnemyAI : MonoBehaviour
     {
         if (isWaiting) return;
 
+        // Rotaciona para o próximo ponto de patrulha enquanto anda
+        Vector3 moveDir = navMeshAgent.desiredVelocity;
+        moveDir.y = 0f;
+        if (moveDir.sqrMagnitude > 0.01f)
+        {
+            Quaternion targetRot = Quaternion.LookRotation(moveDir);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 8f);
+        }
+
         if (!navMeshAgent.pathPending && navMeshAgent.remainingDistance <= navMeshAgent.stoppingDistance)
         {
             StartCoroutine(DwellAndShoot());
         }
     }
+
 
     private IEnumerator DwellAndShoot()
     {
@@ -81,8 +91,7 @@ public class EnemyAI : MonoBehaviour
         // Wait before shooting
         yield return new WaitForSeconds(waitTimeAtPoint);
 
-        // Shoot towards the player
-        ShootAtPlayer();
+
 
         // Pick the next patrol point and continue patrolling
         patrolTarget = PickPatrolPoint();

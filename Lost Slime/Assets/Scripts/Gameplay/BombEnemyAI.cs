@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
-using System.Collections.Generic;
 
 [RequireComponent(typeof(NavMeshAgent), typeof(SphereCollider), typeof(Health))]
 public class BombEnemyAI : MonoBehaviour
@@ -13,16 +12,16 @@ public class BombEnemyAI : MonoBehaviour
     [SerializeField] private float explosionRange = 2f;
     [SerializeField] private float explosionDelay = 3f;
     [SerializeField] private int explosionDamage = 2;
-    [SerializeField] private Color blinkColor = Color.white;
+    [SerializeField] private Color blinkColor = default; // Valor não utilizado nessa abordagem
+
+    [Header("Referências")]
+    [SerializeField] private Renderer bombRenderer; // Pode ser usado para outros efeitos, se desejar
+    [SerializeField] private ParticleSystem warningParticles; // Particle system de aviso
 
     private NavMeshAgent agent;
     private Transform player;
     private bool isChasing = false;
     private bool isExploding = false;
-
-    // Alterado para armazenar todos renderers e cores originais
-    private List<Renderer> renderers = new();
-    private List<Color[]> originalColors = new();
 
     void Awake()
     {
@@ -31,24 +30,29 @@ public class BombEnemyAI : MonoBehaviour
         agent.updateRotation = false;
         player = GameObject.Find("Player").transform;
 
-        // Coleta todos os renderers filhos (inclusive este),
-        // instancia os materiais para evitar alterar os compartilhados
-        foreach (var rend in GetComponentsInChildren<Renderer>())
+        // Se não setado no Inspector, tenta encontrar automaticamente o Renderer do filho "BombEnemy"
+        if (bombRenderer == null)
         {
-            Material[] mats = rend.materials;
-            for (int i = 0; i < mats.Length; i++)
-            {
-                mats[i] = new Material(mats[i]);
-            }
-            rend.materials = mats;
-            renderers.Add(rend);
-            Color[] cols = new Color[mats.Length];
-            for (int i = 0; i < mats.Length; i++)
-            {
-                cols[i] = mats[i].color;
-            }
-            originalColors.Add(cols);
+            var bomb = transform.Find("BombEnemy");
+            if (bomb != null)
+                bombRenderer = bomb.GetComponent<Renderer>();
         }
+
+        // Se não setado, tenta encontrar o ParticleSystem no filho "WarningParticles"
+        if (warningParticles == null)
+        {
+            var warningObj = transform.Find("WarningParticles");
+            if (warningObj != null)
+                warningParticles = warningObj.GetComponent<ParticleSystem>();
+        }
+
+        // Garante que o ParticleSystem esteja parado no início
+        if (warningParticles != null)
+            warningParticles.Stop();
+
+        // Define um valor padrão para blinkColor, se necessário (não é usado nessa abordagem)
+        if (blinkColor == default)
+            blinkColor = new Color(0.6f, 0f, 1f); // Roxo
     }
 
     void Update()
@@ -56,7 +60,6 @@ public class BombEnemyAI : MonoBehaviour
         if (isExploding) return;
 
         float dist = Vector3.Distance(transform.position, player.position);
-
         if (!isChasing && dist <= detectionRange)
         {
             StartCoroutine(ChaseAndExplode());
@@ -65,6 +68,15 @@ public class BombEnemyAI : MonoBehaviour
         {
             agent.speed = patrolSpeed;
             agent.SetDestination(transform.position); // parado
+        }
+
+        // Rotaciona para a direção do movimento (apenas se estiver se movendo)
+        Vector3 moveDir = agent.desiredVelocity;
+        moveDir.y = 0f;
+        if (moveDir.sqrMagnitude > 0.01f)
+        {
+            Quaternion targetRot = Quaternion.LookRotation(moveDir) * Quaternion.Euler(0, 180f, 0);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 10f);
         }
     }
 
@@ -75,6 +87,12 @@ public class BombEnemyAI : MonoBehaviour
         float timer = 0f;
         float blinkInterval = 1f; // começa em 1 segundo
 
+        // Ativa o sistema de partículas de aviso
+        if (warningParticles != null)
+        {
+            warningParticles.Play();
+        }
+
         while (timer < explosionDelay)
         {
             // Anda reto até o player (mantendo a mesma altura)
@@ -82,14 +100,23 @@ public class BombEnemyAI : MonoBehaviour
             target.y = transform.position.y;
             agent.SetDestination(target);
 
-            // Pisca (efeito similar ao HitFlash)
-            SetColor(blinkColor);
-            yield return new WaitForSeconds(blinkInterval * 0.5f);
-            RestoreColor();
-            yield return new WaitForSeconds(blinkInterval * 0.5f);
+            // Modula o ParticleSystem: aumente a taxa de emissão à medida que o tempo passa
+            if (warningParticles != null)
+            {
+                var em = warningParticles.emission;
+                em.rateOverTime = Mathf.Lerp(5f, 50f, timer / explosionDelay);
 
+            }
+
+            yield return new WaitForSeconds(blinkInterval);
             timer += blinkInterval;
             blinkInterval = Mathf.Max(blinkInterval / 2f, 0.05f); // nunca menor que 0.05s
+        }
+
+        // Desliga o sistema de partículas
+        if (warningParticles != null)
+        {
+            warningParticles.Stop();
         }
 
         // Explode
@@ -111,44 +138,8 @@ public class BombEnemyAI : MonoBehaviour
                     health.Apply(-explosionDamage);
             }
         }
-        // Aqui você pode adicionar efeito visual ou partículas
+        // Adicione efeitos visuais ou partículas de explosão se desejar
         Destroy(gameObject);
-    }
-
-    // Altera a cor de todos os materiais dos renderers para a cor desejada
-    private void SetColor(Color color)
-    {
-        foreach (var renderer in renderers)
-        {
-            Material[] mats = renderer.materials;
-            for (int i = 0; i < mats.Length; i++)
-            {
-                SetMaterialColor(mats[i], color);
-            }
-        }
-    }
-
-    // Restaura as cores originais de todos os materiais dos renderers
-    private void RestoreColor()
-    {
-        for (int r = 0; r < renderers.Count; r++)
-        {
-            Material[] mats = renderers[r].materials;
-            Color[] cols = originalColors[r];
-            for (int i = 0; i < mats.Length; i++)
-            {
-                SetMaterialColor(mats[i], cols[i]);
-            }
-        }
-    }
-
-    // Suporte para URP/Lit e Standard/Unlit
-    private void SetMaterialColor(Material mat, Color color)
-    {
-        if (mat.HasProperty("_BaseColor"))
-            mat.SetColor("_BaseColor", color); // URP/Lit
-        else if (mat.HasProperty("_Color"))
-            mat.color = color; // Standard/Unlit
     }
 
     void OnDrawGizmosSelected()

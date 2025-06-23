@@ -6,14 +6,16 @@ using System.Collections.Generic;
 public class HitFlash : MonoBehaviour
 {
     [Header("Flash on Hit")]
-    [SerializeField] private Color hitColor = Color.red;
+    private Color hitColor = new Color(0.3f, 0f, 0f, 1f); // vermelho escuro
     [SerializeField] private float flashDuration = 0.2f;
 
     private Health health;
     // Lista de renderers deste objeto e filhos
     private List<Renderer> renderers = new();
-    // Para cada renderer, armazena as cores originais de seus materiais
+    // Para cada renderer, armazena as cores originais de seus materiais (albedo)
     private List<Color[]> originalColors = new();
+    // Para cada renderer, armazena as cores originais de emissao (se o material tiver)
+    private List<Color[]> originalEmissionColors = new();
 
     /// <summary>
     /// Cor usada no próximo flash (pode ser alterada em runtime)
@@ -43,9 +45,18 @@ public class HitFlash : MonoBehaviour
             renderers.Add(rend);
             var mats = rend.materials;
             var cols = new Color[mats.Length];
+            var emissCols = new Color[mats.Length];
             for (int i = 0; i < mats.Length; i++)
+            {
                 cols[i] = mats[i].color;
+                // Se o material tiver emission, armazena sua cor original
+                if (mats[i].HasProperty("_EmissionColor"))
+                    emissCols[i] = mats[i].GetColor("_EmissionColor");
+                else
+                    emissCols[i] = Color.black;
+            }
             originalColors.Add(cols);
+            originalEmissionColors.Add(emissCols);
         }
 
         // Ao levar dano (onHit), dispara o Flash padrão
@@ -62,12 +73,23 @@ public class HitFlash : MonoBehaviour
 
     private IEnumerator Flash()
     {
-        // Aplica hitColor em todos os materiais
+        // Aplica hitColor em todos os materiais e intensifica a emissao
         for (int r = 0; r < renderers.Count; r++)
         {
             var mats = renderers[r].materials;
             for (int i = 0; i < mats.Length; i++)
-                mats[i].color = hitColor;
+            {
+                if (mats[i].HasProperty("_BaseColor"))
+                    mats[i].SetColor("_BaseColor", hitColor);
+                if (mats[i].HasProperty("_Color"))
+                    mats[i].SetColor("_Color", hitColor);
+
+                if (mats[i].HasProperty("_EmissionColor"))
+                {
+                    mats[i].EnableKeyword("_EMISSION");
+                    mats[i].SetColor("_EmissionColor", hitColor * 2f);
+                }
+            }
         }
 
         yield return new WaitForSeconds(flashDuration);
@@ -77,8 +99,22 @@ public class HitFlash : MonoBehaviour
         {
             var mats = renderers[r].materials;
             var cols = originalColors[r];
+            var emissCols = originalEmissionColors[r];
             for (int i = 0; i < mats.Length; i++)
-                mats[i].color = cols[i];
+            {
+                if (mats[i].HasProperty("_BaseColor"))
+                    mats[i].SetColor("_BaseColor", cols[i]);
+                if (mats[i].HasProperty("_Color"))
+                    mats[i].SetColor("_Color", cols[i]);
+
+                if (mats[i].HasProperty("_EmissionColor"))
+                {
+                    mats[i].SetColor("_EmissionColor", emissCols[i]);
+                    // Opcional: desabilitar a emissao se não for necessário
+                    // mats[i].DisableKeyword("_EMISSION");
+                }
+            }
         }
     }
+
 }
