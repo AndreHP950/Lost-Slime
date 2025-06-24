@@ -15,13 +15,19 @@ public class Health : MonoBehaviour
     public UnityEvent<int> onHealthChanged;
     public UnityEvent onDied;
     public UnityEvent onHit;
-
     public bool isImmune = false; // Flag to track damage immunity
+
+    [Header("Animation")]
+    [SerializeField] private Animator healthAnimator;  // Referência ao Animator para disparar triggers
 
     void Awake()
     {
         Current = maxHealth;
         onHealthChanged.Invoke(Current);
+        
+        // Tenta obter o Animator se não tiver sido atribuído
+        if (healthAnimator == null)
+            healthAnimator = GetComponentInChildren<Animator>();
     }
 
     /// <summary>
@@ -29,9 +35,12 @@ public class Health : MonoBehaviour
     /// </summary>
     public void Apply(int amount)
     {
-        // Só ignora se for dano e estiver imune
-        if (amount < 0 && isImmune) return;
-        if (Current <= 0) return;
+        // Ignora dano se estiver imune
+        if (amount < 0 && isImmune)
+            return;
+
+        if (Current <= 0)
+            return;
 
         Current = Mathf.Clamp(Current + amount, 0, maxHealth);
         onHealthChanged.Invoke(Current);
@@ -39,24 +48,30 @@ public class Health : MonoBehaviour
         if (amount < 0)
         {
             onHit.Invoke();
-            // TOCA SOM DE DANO
-            if (AudioManager.Instance != null)
-                AudioManager.Instance.PlayDamage();
+            AudioManager.Instance.PlayHitLowPitch();
+            // Dispara trigger Hit
+            if (healthAnimator != null)
+                healthAnimator.SetTrigger("Hit");
 
             if (Current == 0)
             {
-                // TOCA SOM DE MORTE
-                if (AudioManager.Instance != null)
-                    AudioManager.Instance.PlayDeath();
-                TriggerDeathEffect(); // Adiciona o efeito de morte
+                // Dispara trigger Death
+                if (healthAnimator != null)
+                    healthAnimator.SetTrigger("Death");
+
                 onDied.Invoke();
+                // Opcional: Chame o efeito de morte.
+                TriggerDeathEffect();
             }
         }
         else if (amount > 0)
         {
-            // TOCA SOM DE CURA
+            // TOCA SOM DE CURA e se desejar, dispare um trigger para Recover
             if (AudioManager.Instance != null)
                 AudioManager.Instance.PlayHeal();
+            // Exemplo:
+            if (healthAnimator != null)
+                healthAnimator.SetTrigger("Recover");
         }
     }
 
@@ -64,10 +79,8 @@ public class Health : MonoBehaviour
     {
         if (deathEffectPrefab != null)
         {
-            // Instancia o efeito na posição do inimigo
             GameObject effect = Instantiate(deathEffectPrefab, transform.position, transform.rotation);
-            Destroy(effect, 3f); // Destroi o efeito após 3 segundos
+            Destroy(effect, 3f);
         }
     }
 }
-

@@ -8,7 +8,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float dashSpeed = 10f;
     [SerializeField] public float dashCooldown = 1f;
-    [SerializeField] private Transform slimeTransform;
+    [Tooltip("Referência ao objeto visual do Slime (SlimeArmature)")]
+    [SerializeField] private Transform slimeArmatureTransform; // arraste o SlimeArmature aqui
     public bool isDashing = false;
     public float dashCooldownTimer = 0f;
     private int dashCount = 3;
@@ -22,7 +23,6 @@ public class PlayerMovement : MonoBehaviour
     private BoxCollider playerCollider;
     private Vector3 originalColliderSize;
     private Vector3 originalColliderCenter;
-    private Vector3 originalScale;
 
     private Rigidbody rb;
     private Vector3 inputVector;
@@ -35,6 +35,9 @@ public class PlayerMovement : MonoBehaviour
     private float originalY;
     private float originalGroundY;
 
+    // Referência ao Animator do Slime
+    private Animator slimeAnimator;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -44,12 +47,15 @@ public class PlayerMovement : MonoBehaviour
 
         originalColliderSize = playerCollider.size;
         originalColliderCenter = playerCollider.center;
-        originalScale = transform.localScale;
         originalY = transform.position.y; // Pivô original do jogador
-        originalGroundY = originalY - (originalScale.y * 0.5f); // Supõe que o pivô está centralizado
+        originalGroundY = originalY - (transform.localScale.y * 0.5f); // Supõe que o pivô está centralizado
 
         // Armazena a velocidade original definida no Inspector
         baseMoveSpeed = moveSpeed;
+
+        // Busca o Animator no SlimeArmature
+        if (slimeArmatureTransform != null)
+            slimeAnimator = slimeArmatureTransform.GetComponent<Animator>();
     }
 
     void Update()
@@ -75,10 +81,24 @@ public class PlayerMovement : MonoBehaviour
 
         if (liquidCooldownTimer > 0f)
             liquidCooldownTimer -= Time.deltaTime;
+
+        // --- Controle de animações ---
+        if (slimeAnimator != null)
+        {
+            // Idle: true se não está se movendo, não está liquidificado e não está dashando
+            bool isIdle = inputVector.sqrMagnitude < 0.01f && !isLiquidified && !isDashing && !slimeAnimator.GetBool("IsLiquify");
+            slimeAnimator.SetBool("IsIdle", isIdle);
+
+            // Liquify: true se está liquidificado
+            slimeAnimator.SetBool("IsLiquify", isLiquidified);
+        }
     }
 
     private void RotateTowardsCursor()
     {
+        // Gira o SlimeArmature (visual) para o mouse, mas mantém o corpo do player estático
+        if (slimeArmatureTransform == null) return;
+
         Plane groundPlane = new Plane(Vector3.up, new Vector3(0, transform.position.y, 0));
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
@@ -86,15 +106,13 @@ public class PlayerMovement : MonoBehaviour
         if (groundPlane.Raycast(ray, out enter))
         {
             Vector3 hitPoint = ray.GetPoint(enter);
-            Vector3 lookDir = hitPoint - transform.position;
+            Vector3 lookDir = hitPoint - slimeArmatureTransform.position;
             lookDir.y = 0f;
 
-            if (lookDir.sqrMagnitude > 0.01f && slimeTransform != null)
+            if (lookDir.sqrMagnitude > 0.01f)
             {
                 Quaternion targetRot = Quaternion.LookRotation(lookDir);
-                // Mantém o -90 em X, aplica só o Y do targetRot
-                Vector3 euler = targetRot.eulerAngles;
-                slimeTransform.rotation = Quaternion.Euler(-90f, euler.y, 0f);
+                slimeArmatureTransform.rotation = targetRot;
             }
         }
     }
@@ -141,35 +159,41 @@ public class PlayerMovement : MonoBehaviour
 
     private IEnumerator Liquidify()
     {
+        slimeAnimator.SetBool("IsIdle", false);
+        if (slimeAnimator != null)
+            slimeAnimator.SetBool("IsLiquify", true);
+
         isLiquidified = true;
         liquidCooldownTimer = liquidCooldown;
 
         moveSpeed = 3f;
-        // Visual e hitbox achatados com Y ainda menor (diminui para 5% da altura original)
-        playerCollider.size = new Vector3(originalColliderSize.x * 2f, 0.05f, originalColliderSize.z * 2f);
-        playerCollider.center = new Vector3(originalColliderCenter.x, 0.025f, originalColliderCenter.z);
-        transform.localScale = new Vector3(originalScale.x * 2f, 0.05f, originalScale.z * 2f);
 
-        // Ajusta a posição para que o jogador fique "no chão"
-        Vector3 currentPos = transform.position;
-        float liquefiedY = (transform.localScale.y * 0.5f) + originalGroundY;
-        transform.position = new Vector3(currentPos.x, liquefiedY, currentPos.z);
+        // Novo tamanho achatado
+        Vector3 newSize = new Vector3(originalColliderSize.x * 2f, 0.05f, originalColliderSize.z * 2f);
+
+        // Novo centro: base do colisor encostando no chão
+        float newCenterY = (newSize.y / 2f) - (originalColliderSize.y / 2f) + originalColliderCenter.y;
+
+        playerCollider.size = newSize;
+        playerCollider.center = new Vector3(originalColliderCenter.x, newCenterY, originalColliderCenter.z);
 
         yield return new WaitForSeconds(liquidDuration);
 
-        // Restaurar visual e hitbox
+        // Restaurar colisor
         playerCollider.size = originalColliderSize;
         playerCollider.center = originalColliderCenter;
-        transform.localScale = originalScale;
 
-        // Restaura a posição Y original
-        currentPos = transform.position;
-        transform.position = new Vector3(currentPos.x, originalY, currentPos.z);
-
-        moveSpeed = baseMoveSpeed; // Velocidade normal restaurada
+        moveSpeed = baseMoveSpeed;
         isLiquidified = false;
+
+        if (slimeAnimator != null)
+            slimeAnimator.SetBool("IsLiquify", false);
+
         Debug.Log("Liqueficação terminada.");
     }
+
+
+
 
     public bool IsLiquidified => isLiquidified;
 

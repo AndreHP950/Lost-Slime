@@ -21,23 +21,26 @@ public class PlayerAttack : MonoBehaviour
     private float cooldownTimer = 0f;
     private PlayerMovement playerMovement;
 
+    [Header("Animation")]
+    [SerializeField] private Animator attackAnimator;  // Referência ao Animator para trigger "Attack"
+
     void Awake()
     {
         playerMovement = GetComponent<PlayerMovement>();
+
+        // Tenta obter o Animator se não tiver sido atribuído
+        if (attackAnimator == null)
+            attackAnimator = GetComponentInChildren<Animator>();
     }
 
     void Update()
     {
-        // decrementa cooldown
         if (cooldownTimer > 0f)
             cooldownTimer -= Time.deltaTime;
 
-        // checa input de tiro
-        bool wantShoot = isAuto
-            ? Input.GetButton("Fire1")
-            : Input.GetButtonDown("Fire1");
+        bool wantShoot = isAuto ? Input.GetButton("Fire1") : Input.GetButtonDown("Fire1");
 
-        // Só atira se o cooldown permitir e se o player não estiver liquidificado.
+        // Não atira se estiver liquidificado
         if (wantShoot && cooldownTimer <= 0f && !playerMovement.IsLiquidified)
         {
             Vector3 dir = GetMouseDirection();
@@ -56,7 +59,7 @@ public class PlayerAttack : MonoBehaviour
         {
             Vector3 hitPoint = ray.GetPoint(enter);
             Vector3 dir = hitPoint - transform.position;
-            dir.y = 0;  // anula componente vertical
+            dir.y = 0;
             return dir.normalized;
         }
         return transform.forward;
@@ -64,19 +67,20 @@ public class PlayerAttack : MonoBehaviour
 
     private void Shoot(Vector3 dir)
     {
-        // calcula posição de spawn fora do player
         Vector3 spawnPos = transform.position + dir * spawnOffset;
-
-        // instancia bullet
         GameObject bulletGO = Instantiate(bulletPrefab, spawnPos, Quaternion.LookRotation(dir));
 
-        // configura velocidade e dano
         Rigidbody rb = bulletGO.GetComponent<Rigidbody>();
         Bullet bullet = bulletGO.GetComponent<Bullet>();
         bullet.damage = bulletDamage;
         rb.AddForce(dir * bulletSpeed, ForceMode.Impulse);
 
+        
         if (AudioManager.Instance != null)
             AudioManager.Instance.PlayDamage();
+
+        // Dispara trigger Attack
+        if (attackAnimator != null)
+            attackAnimator.SetTrigger("Attack");
     }
 }

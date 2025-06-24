@@ -15,6 +15,7 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip deathClip;
     [SerializeField] private AudioClip deathSongClip;
     [SerializeField] private AudioClip slimeWalkClip;
+    [SerializeField] private AudioClip hitClip;
 
     [Header("Música de Fundo")]
     [SerializeField] private AudioSource musicSource;           // AudioSource para música de fundo
@@ -126,4 +127,22 @@ public class AudioManager : MonoBehaviour
     public void PlayDeath() => PlaySfx(deathClip);
     public void PlayDeathSong() => PlaySfx(deathSongClip);
     public void PlaySlimeWalk() => PlaySfx(slimeWalkClip);
+
+    public void PlayHitLowPitch()
+    {
+        if (damageClip == null) return;
+
+        // Salva o pitch original.
+        float originalPitch = sfxSource.pitch;
+
+        // Define um pitch mais grave (menor que 1).
+        sfxSource.pitch = 0.3f;
+
+        // Toca o hitClip.
+        sfxSource.PlayOneShot(damageClip);
+
+        // Restaura o pitch original.
+        sfxSource.pitch = originalPitch;
+    }
+
 }
