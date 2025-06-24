@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
+using UnityEngine.VFX;
 
 [RequireComponent(typeof(NavMeshAgent), typeof(SphereCollider), typeof(Health))]
 public class BombEnemyAI : MonoBehaviour
@@ -18,6 +19,12 @@ public class BombEnemyAI : MonoBehaviour
     [SerializeField] private Renderer bombRenderer; // Pode ser usado para outros efeitos, se desejar
     [SerializeField] private ParticleSystem warningParticles; // Particle system de aviso
 
+    [Header("Áudio da Bomba")]
+    [SerializeField] private AudioClip beepExplosionClip; // Áudio único com beeps e explosão
+
+    [Header("Efeito de Explosão")]
+    [SerializeField] private GameObject explosionVFX; // Prefab do efeito de explosão (VFX Graph ou outro)
+
     private NavMeshAgent agent;
     private Transform player;
     private bool isChasing = false;
@@ -30,7 +37,7 @@ public class BombEnemyAI : MonoBehaviour
         agent.updateRotation = false;
         player = GameObject.Find("Player").transform;
 
-        // Se não setado no Inspector, tenta encontrar automaticamente o Renderer do filho "BombEnemy"
+        // Tenta encontrar automaticamente o Renderer do filho "BombEnemy"
         if (bombRenderer == null)
         {
             var bomb = transform.Find("BombEnemy");
@@ -38,7 +45,7 @@ public class BombEnemyAI : MonoBehaviour
                 bombRenderer = bomb.GetComponent<Renderer>();
         }
 
-        // Se não setado, tenta encontrar o ParticleSystem no filho "WarningParticles"
+        // Tenta encontrar o ParticleSystem no filho "WarningParticles"
         if (warningParticles == null)
         {
             var warningObj = transform.Find("WarningParticles");
@@ -50,7 +57,7 @@ public class BombEnemyAI : MonoBehaviour
         if (warningParticles != null)
             warningParticles.Stop();
 
-        // Define um valor padrão para blinkColor, se necessário (não é usado nessa abordagem)
+        // Define um valor padrão para blinkColor se necessário (não utilizado aqui)
         if (blinkColor == default)
             blinkColor = new Color(0.6f, 0f, 1f); // Roxo
     }
@@ -85,13 +92,14 @@ public class BombEnemyAI : MonoBehaviour
         isChasing = true;
         agent.speed = chaseSpeed;
         float timer = 0f;
-        float blinkInterval = 1f; // começa em 1 segundo
 
-        // Ativa o sistema de partículas de aviso
+        // Ativa o ParticleSystem de aviso
         if (warningParticles != null)
-        {
             warningParticles.Play();
-        }
+
+        // Toca o áudio único (beeps seguidos da explosão) assim que a bomba é acionada
+        if (AudioManager.Instance != null && beepExplosionClip != null)
+            AudioManager.Instance.PlaySfx(beepExplosionClip);
 
         while (timer < explosionDelay)
         {
@@ -100,26 +108,22 @@ public class BombEnemyAI : MonoBehaviour
             target.y = transform.position.y;
             agent.SetDestination(target);
 
-            // Modula o ParticleSystem: aumente a taxa de emissão à medida que o tempo passa
+            // Modula o ParticleSystem: aumenta a taxa de emissão com o tempo
             if (warningParticles != null)
             {
                 var em = warningParticles.emission;
                 em.rateOverTime = Mathf.Lerp(5f, 50f, timer / explosionDelay);
-
             }
 
-            yield return new WaitForSeconds(blinkInterval);
-            timer += blinkInterval;
-            blinkInterval = Mathf.Max(blinkInterval / 2f, 0.05f); // nunca menor que 0.05s
+            yield return null;
+            timer += Time.deltaTime;
         }
 
-        // Desliga o sistema de partículas
+        // Desliga o ParticleSystem
         if (warningParticles != null)
-        {
             warningParticles.Stop();
-        }
 
-        // Explode
+        // Procede com a explosão
         isExploding = true;
         agent.isStopped = true;
         Explode();
@@ -127,6 +131,22 @@ public class BombEnemyAI : MonoBehaviour
 
     private void Explode()
     {
+        // Instancia o efeito de explosão na posição da bomba
+        if (explosionVFX != null)
+        {
+            GameObject explosionEffect = Instantiate(explosionVFX, transform.position, transform.rotation);
+
+            // Obtém o componente VisualEffect do prefab
+            VisualEffect vfx = explosionEffect.GetComponent<VisualEffect>();
+            if (vfx != null)
+            {
+                
+                 vfx.SendEvent("Explode");
+            }
+
+            Destroy(explosionEffect, 3f); // Destroi o efeito após 3 segundos (ajuste conforme necessário)
+        }
+
         // Dano em área
         Collider[] hits = Physics.OverlapSphere(transform.position, explosionRange);
         foreach (var hit in hits)
@@ -138,7 +158,7 @@ public class BombEnemyAI : MonoBehaviour
                     health.Apply(-explosionDamage);
             }
         }
-        // Adicione efeitos visuais ou partículas de explosão se desejar
+
         Destroy(gameObject);
     }
 
