@@ -42,6 +42,14 @@ public class PlayerAttack : MonoBehaviour
 
     void Update()
     {
+        // Atualizar o estado do double shot com base no PowerUpManager (garante atualização instantânea)
+        if (PowerUpManager.Instance != null)
+        {
+            bool dsActive = PowerUpManager.Instance.GetActivePowerUps().Contains(PowerUpType.DoubleShot);
+            if (dsActive != hasDoubleShot)
+                hasDoubleShot = dsActive;
+        }
+
         if (cooldownTimer > 0f)
             cooldownTimer -= Time.deltaTime;
 
@@ -52,19 +60,16 @@ public class PlayerAttack : MonoBehaviour
         {
             Vector3 dir = GetMouseDirection();
 
-            // Dispara um ou dois tiros, dependendo do power up
+            // Se o DoubleShot estiver ativo, dispara dois tiros
             if (hasDoubleShot)
-            {
                 ShootDouble(dir);
-            }
             else
-            {
                 Shoot(dir);
-            }
 
             cooldownTimer = 1f / fireRate;
         }
     }
+
 
     // Retorna vetor normalizado do player até o mouse no plano y=0
     private Vector3 GetMouseDirection()

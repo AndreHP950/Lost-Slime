@@ -105,7 +105,7 @@ MonoBehaviour:
   rotationSpeed: 50
   bobHeight: 0.5
   bobSpeed: 1
-  collectSound: {fileID: 0}
+  collectSound: {fileID: 8300000, guid: f39eb3c042c523e44b52b1df81318d94, type: 3}
 --- !u!65 &8420574132220743185
 BoxCollider:
   m_ObjectHideFlags: 0

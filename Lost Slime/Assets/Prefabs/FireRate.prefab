@@ -67,7 +67,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: d0b593cdce9865a4ab51ea4c91fcc246, type: 2}
+  - {fileID: 2100000, guid: b93c1b38458228b4489b81b87ca0303d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -105,7 +105,7 @@ MonoBehaviour:
   rotationSpeed: 50
   bobHeight: 0.5
   bobSpeed: 1
-  collectSound: {fileID: 0}
+  collectSound: {fileID: 8300000, guid: f39eb3c042c523e44b52b1df81318d94, type: 3}
 --- !u!65 &5724797188268282916
 BoxCollider:
   m_ObjectHideFlags: 0

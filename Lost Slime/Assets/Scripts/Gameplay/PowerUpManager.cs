@@ -27,7 +27,7 @@ public class PowerUpManager : MonoBehaviour
     public static PowerUpManager Instance { get; private set; }
 
     [SerializeField] private int maxPowerUps = 3;
-    [SerializeField] private List<PowerUpInfo> powerUpDefinitions = new List<PowerUpInfo>();
+    [SerializeField] public List<PowerUpInfo> powerUpDefinitions = new List<PowerUpInfo>();
     [SerializeField] private bool debugMode = false; // Para testes
 
     // Evento disparado quando a coleção de power ups é alterada
