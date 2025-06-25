@@ -134,7 +134,7 @@ public class PlayerMovement : MonoBehaviour
         Vector3 dashVector = inputVector * dashSpeed;
         rb.linearVelocity = new Vector3(dashVector.x, rb.linearVelocity.y, dashVector.z);
 
-        Debug.Log("Dash realizado! Restam " + dashCount + " dashes.");
+        
 
         StartCoroutine(EndDash());
     }
@@ -154,7 +154,7 @@ public class PlayerMovement : MonoBehaviour
     {
         yield return new WaitForSeconds(5.5f); // tempo para recarregar dash
         dashCount++;
-        Debug.Log("Dash recarregado! Dashes disponíveis: " + dashCount);
+        
     }
 
     private IEnumerator Liquidify()
@@ -189,7 +189,7 @@ public class PlayerMovement : MonoBehaviour
         if (slimeAnimator != null)
             slimeAnimator.SetBool("IsLiquify", false);
 
-        Debug.Log("Liqueficação terminada.");
+        
     }
 
 

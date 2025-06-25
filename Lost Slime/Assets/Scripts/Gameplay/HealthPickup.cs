@@ -16,14 +16,14 @@ public class HealthPickup : MonoBehaviour
     void Awake()
     {
         if (targetHealth == null)
-            Debug.LogError("HealthPickup: arraste o componente Health do Player no Inspector!");
+            
 
         targetFlash = targetHealth.GetComponent<HitFlash>();
     }
 
     void OnTriggerEnter(Collider other)
     {
-        Debug.Log("Pickup detectou: " + other.name);
+        
         if (!other.CompareTag("Player")) return;
 
         // pega o Health do player

@@ -45,7 +45,7 @@ public class Bullet : MonoBehaviour
                 return;
 
             h.Apply(-Mathf.RoundToInt(damage));
-            Debug.Log($"{other.name} levou {damage} de dano, vida agora {h.Current}");
+            
 
             // Só destrói a bala se causou dano
             Destroy(gameObject);
