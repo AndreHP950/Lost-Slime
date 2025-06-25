@@ -6,36 +6,37 @@ public class PauseMenuController : MonoBehaviour
 {
     [Header("UI")]
     [SerializeField] private GameObject pausePanel;
+    [SerializeField] private GameObject optionsPanel; // NOVO
     [SerializeField] private Slider volumeSlider;
     [SerializeField] private Button menuButton;
     [SerializeField] private Button prototypeButton;
     [SerializeField] private Button level1Button;
+    [SerializeField] private Button optionsButton; // NOVO
 
     [Header("Pause Overlay")]
-    [SerializeField] private Image pauseVignette;    // Overlay para escurecer a tela
-    [SerializeField] private float pauseVignetteAlpha = 0.3f; // Valor de alpha para o overlay
+    [SerializeField] private Image pauseVignette;
+    [SerializeField] private float pauseVignetteAlpha = 0.3f;
 
     [Header("Scene Elements")]
-    [SerializeField] private GameObject canvasObject;  // Referência ao Canvas
-    [SerializeField] private GameObject groundObject;  // Referência ao chão com bake do NavMesh
+    [SerializeField] private GameObject canvasObject;
+    [SerializeField] private GameObject groundObject;
 
     private bool isPaused = false;
 
     void Start()
     {
-        // Desativa o painel de pause e o overlay ao iniciar
         if (pausePanel != null)
             pausePanel.SetActive(false);
+        if (optionsPanel != null)
+            optionsPanel.SetActive(false);
         if (pauseVignette != null)
             pauseVignette.color = new Color(0, 0, 0, 0);
 
-        // Ativa o Canvas e o chão automaticamente ao iniciar o jogo
-
+        if (canvasObject != null)
             canvasObject.SetActive(true);
-
+        if (groundObject != null)
             groundObject.SetActive(true);
 
-        // Configura o slider de volume
         if (volumeSlider != null)
         {
             volumeSlider.minValue = 0f;
@@ -44,7 +45,6 @@ public class PauseMenuController : MonoBehaviour
             volumeSlider.onValueChanged.AddListener(SetVolume);
         }
 
-        // Configura os botões de troca de cena com SFX ao clicar
         if (menuButton != null)
             menuButton.onClick.AddListener(() =>
             {
@@ -63,20 +63,31 @@ public class PauseMenuController : MonoBehaviour
                 AudioManager.Instance?.PlayButton();
                 TryLoadScene("Level1");
             });
+
+        if (optionsButton != null)
+            optionsButton.onClick.AddListener(OpenOptions);
     }
 
     void Update()
     {
-        // Na cena "Menu" não ativamos o pause, então ESC não funciona
         if (SceneManager.GetActiveScene().name == "Menu")
             return;
 
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (!isPaused)
-                Pause();
+            if (optionsPanel != null && optionsPanel.activeSelf)
+            {
+                // Se está no painel de opções, volta para o pause
+                optionsPanel.SetActive(false);
+                pausePanel.SetActive(true);
+            }
             else
-                Resume();
+            {
+                if (!isPaused)
+                    Pause();
+                else
+                    Resume();
+            }
         }
     }
 
@@ -88,7 +99,6 @@ public class PauseMenuController : MonoBehaviour
             pausePanel.SetActive(true);
         if (pauseVignette != null)
             pauseVignette.color = new Color(0, 0, 0, pauseVignetteAlpha);
-        // Opcional: Cursor.visible = true;
     }
 
     public void Resume()
@@ -97,9 +107,10 @@ public class PauseMenuController : MonoBehaviour
         Time.timeScale = 1f;
         if (pausePanel != null)
             pausePanel.SetActive(false);
+        if (optionsPanel != null)
+            optionsPanel.SetActive(false);
         if (pauseVignette != null)
             pauseVignette.color = new Color(0, 0, 0, 0);
-        // Opcional: Cursor.visible = false;
     }
 
     public void SetVolume(float value)
@@ -107,23 +118,24 @@ public class PauseMenuController : MonoBehaviour
         AudioListener.volume = value;
     }
 
-    // Método para iniciar o jogo
+    public void OpenOptions()
+    {
+        pausePanel.SetActive(false);
+        optionsPanel.SetActive(true);
+    }
+
     public void StartGame()
     {
-        // Ativa Canvas e chão quando o jogo iniciar
         if (canvasObject != null)
             canvasObject.SetActive(true);
         if (groundObject != null)
             groundObject.SetActive(true);
-
-        // Fecha o menu e retoma o jogo (se necessário)
         Resume();
     }
 
-    // Tenta carregar a cena desejada. Se já estiver na cena, apenas fecha o painel.
     public void TryLoadScene(string sceneName)
     {
-        Time.timeScale = 1f; // Restaura a escala de tempo antes de trocar de cena
+        Time.timeScale = 1f;
         if (SceneManager.GetActiveScene().name == sceneName)
         {
             Resume();

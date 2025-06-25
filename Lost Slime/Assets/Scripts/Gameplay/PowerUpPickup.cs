@@ -34,6 +34,11 @@ public class PowerUpPickup : MonoBehaviour
             {
                 if (PowerUpManager.Instance.AddPowerUp(powerUpType))
                 {
+                    // Ativa animação de recover no Health do player
+                    var health = other.GetComponent<Health>();
+                    if (health != null)
+                        health.Apply(0); // Não altera a vida, mas dispara o trigger "Recover"
+
                     if (AudioManager.Instance != null && collectSound != null)
                         AudioManager.Instance.PlaySfx(collectSound);
                     Destroy(gameObject);
@@ -41,4 +46,5 @@ public class PowerUpPickup : MonoBehaviour
             }
         }
     }
+
 }

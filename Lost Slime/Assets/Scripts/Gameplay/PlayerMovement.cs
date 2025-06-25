@@ -8,6 +8,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float dashSpeed = 10f;
     [SerializeField] public float dashCooldown = 1f;
+    [SerializeField] private GameObject dashTrailVFXPrefab;
+
     [Tooltip("Referência ao objeto visual do Slime (SlimeArmature)")]
     [SerializeField] private Transform slimeArmatureTransform; // arraste o SlimeArmature aqui
     public bool isDashing = false;
@@ -134,10 +136,26 @@ public class PlayerMovement : MonoBehaviour
         Vector3 dashVector = inputVector * dashSpeed;
         rb.linearVelocity = new Vector3(dashVector.x, rb.linearVelocity.y, dashVector.z);
 
-        
+        if (dashTrailVFXPrefab != null)
+        {
+            // Offset para trás do player (oposto ao dash)
+            Vector3 backOffset = -inputVector.normalized * 0.8f;
+
+            // Adiciona um offset para baixo (mais próximo do chão)
+            float verticalOffset = -0.8f; // Ajuste este valor conforme necessário
+
+            // Aplica os dois offsets
+            Vector3 trailPosition = transform.position + backOffset + new Vector3(0, verticalOffset, 0);
+
+            var vfx = Instantiate(dashTrailVFXPrefab, trailPosition, Quaternion.identity);
+            vfx.transform.SetParent(transform); // para seguir o player durante o dash
+            Destroy(vfx, 0.5f); // ajuste para o tempo do trail
+        }
 
         StartCoroutine(EndDash());
     }
+
+
 
     private IEnumerator EndDash()
     {

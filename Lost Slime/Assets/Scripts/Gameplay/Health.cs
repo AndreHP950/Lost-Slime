@@ -39,9 +39,11 @@ public class Health : MonoBehaviour
         if (amount < 0 && isImmune)
             return;
 
+        // Se já está morto, não faz nada
         if (Current <= 0)
             return;
 
+        int oldCurrent = Current;
         Current = Mathf.Clamp(Current + amount, 0, maxHealth);
         onHealthChanged.Invoke(Current);
 
@@ -49,31 +51,28 @@ public class Health : MonoBehaviour
         {
             onHit.Invoke();
             AudioManager.Instance.PlayHitLowPitch();
-            // Dispara trigger Hit
             if (healthAnimator != null)
                 healthAnimator.SetTrigger("Hit");
 
-            if (Current == 0)
+            // Só dispara morte se estava vivo antes e agora morreu
+            if (oldCurrent > 0 && Current == 0)
             {
-                // Dispara trigger Death
                 if (healthAnimator != null)
                     healthAnimator.SetTrigger("Death");
 
                 onDied.Invoke();
-                // Opcional: Chame o efeito de morte.
                 TriggerDeathEffect();
             }
         }
         else if (amount > 0)
         {
-            // TOCA SOM DE CURA e se desejar, dispare um trigger para Recover
             if (AudioManager.Instance != null)
                 AudioManager.Instance.PlayHeal();
-            // Exemplo:
             if (healthAnimator != null)
                 healthAnimator.SetTrigger("Recover");
         }
     }
+
 
     private void TriggerDeathEffect()
     {

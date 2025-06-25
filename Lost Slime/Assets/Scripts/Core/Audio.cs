@@ -38,7 +38,6 @@ public class AudioManager : MonoBehaviour
             return;
         }
         Instance = this;
-
         // Se nenhum AudioSource for atribuído no Inspector, adiciona um componente para SFX
         if (sfxSource == null)
             sfxSource = gameObject.AddComponent<AudioSource>();
@@ -49,6 +48,11 @@ public class AudioManager : MonoBehaviour
             musicSource = gameObject.AddComponent<AudioSource>();
             musicSource.loop = false;  // Usamos sem loop para controlar a sequência
         }
+
+        float musicVol = PlayerPrefs.GetFloat("MusicVolume", 1f);
+        float sfxVol = PlayerPrefs.GetFloat("SFXVolume", 1f);
+        SetMusicVolume(musicVol);
+        SetSfxVolume(sfxVol);
     }
 
     void Start()
@@ -64,6 +68,25 @@ public class AudioManager : MonoBehaviour
     /// <summary>
     /// Embaralha os índices dos clipes para criar uma sequência aleatória.
     /// </summary>
+    /// 
+    public float GetMusicVolume() => musicSource != null ? musicSource.volume : 1f;
+    public float GetSfxVolume() => sfxSource != null ? sfxSource.volume : 1f;
+
+    public void SetMusicVolume(float volume)
+    {
+        if (musicSource != null)
+            musicSource.volume = volume;
+        PlayerPrefs.SetFloat("MusicVolume", volume);
+    }
+
+    public void SetSfxVolume(float volume)
+    {
+        if (sfxSource != null)
+            sfxSource.volume = volume;
+        PlayerPrefs.SetFloat("SFXVolume", volume);
+    }
+
+
     private void InitializeMusicOrder()
     {
         int count = backgroundMusicClips.Length;

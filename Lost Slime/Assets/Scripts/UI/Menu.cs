@@ -5,6 +5,16 @@ using UnityEngine.SceneManagement;
 public class Menu : MonoBehaviour
 {
     [SerializeField] private AudioClip playButtonClip;
+    [SerializeField] private GameObject optionsPanel; // arraste o OptionsPanel aqui
+    [SerializeField] private GameObject mainMenuPanel; // painel principal do menu (os botões Play/Options/Exit)
+    void Awake()
+    {
+        if (optionsPanel != null)
+            optionsPanel.SetActive(false);
+        if (mainMenuPanel != null)
+            mainMenuPanel.SetActive(true);
+    }
+
 
     public void Play()
     {
@@ -13,7 +23,6 @@ public class Menu : MonoBehaviour
 
     private IEnumerator PlayAndLoad()
     {
-        // Verifica se o AudioManager existe e se o clipe está atribuído
         if (AudioManager.Instance != null && playButtonClip != null)
         {
             AudioManager.Instance.PlaySfx(playButtonClip);
@@ -21,7 +30,6 @@ public class Menu : MonoBehaviour
         }
         else
         {
-            // Se não houver AudioManager ou clipe, apenas espera um pequeno tempo para evitar clique duplo
             yield return new WaitForSeconds(0.1f);
         }
         SceneManager.LoadScene("Level1");
@@ -29,7 +37,20 @@ public class Menu : MonoBehaviour
 
     public void Options()
     {
-        // SceneManager.LoadScene("Options");
+        if (optionsPanel != null )
+        {
+            optionsPanel.SetActive(true);
+            mainMenuPanel.SetActive(false);
+        }
+    }
+
+    public void BackFromOptions()
+    {
+        if (optionsPanel != null && mainMenuPanel != null)
+        {
+            optionsPanel.SetActive(false);
+            mainMenuPanel.SetActive(true);
+        }
     }
 
     public void Quit()

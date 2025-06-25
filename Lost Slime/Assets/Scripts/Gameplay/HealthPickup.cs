@@ -9,39 +9,54 @@ public class HealthPickup : MonoBehaviour
 
     [Header("Referências")]
     [Tooltip("Arraste aqui o componente Health do Player")]
-    [SerializeField] private Health targetHealth;
+    private Health targetHealth;
 
     private HitFlash targetFlash;
 
+    [Header("Efeitos Visuais")]
+    [SerializeField] private float rotationSpeed = 50f;
+    [SerializeField] private float bobHeight = 0.5f;
+    [SerializeField] private float bobSpeed = 1f;
+
+    private Vector3 startPosition;
+
     void Awake()
     {
+        // Procura o objeto com a tag "Player" e pega o Health
         if (targetHealth == null)
-            
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+                targetHealth = player.GetComponent<Health>();
+        }
 
-        targetFlash = targetHealth.GetComponent<HitFlash>();
+        targetFlash = targetHealth != null ? targetHealth.GetComponent<HitFlash>() : null;
+        startPosition = transform.position;
+    }
+
+
+    void Update()
+    {
+        transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime);
+        float newY = startPosition.y + Mathf.Sin(Time.time * bobSpeed) * bobHeight;
+        transform.position = new Vector3(transform.position.x, newY, transform.position.z);
     }
 
     void OnTriggerEnter(Collider other)
     {
-        
         if (!other.CompareTag("Player")) return;
 
-        // pega o Health do player
         var hp = other.GetComponent<Health>();
         if (hp == null)
             return;
 
-        // se já estiver com vida cheia, não faz nada
         if (hp.Current >= hp.MaxHealth)
             return;
 
-        // Aplica cura
         targetHealth.Apply(+healAmount);
 
-        // Flash verde rápido
         if (targetFlash != null)
         {
-            // salva valores antigos
             var prevColor = targetFlash.HitColor;
             var prevDur = targetFlash.FlashDuration;
 
@@ -49,12 +64,10 @@ public class HealthPickup : MonoBehaviour
             targetFlash.FlashDuration = flashDuration;
             targetFlash.ForceFlash();
 
-            // restaura valores
             targetFlash.HitColor = prevColor;
             targetFlash.FlashDuration = prevDur;
         }
 
-        // destrói a caixinha
         Destroy(gameObject);
     }
 }
