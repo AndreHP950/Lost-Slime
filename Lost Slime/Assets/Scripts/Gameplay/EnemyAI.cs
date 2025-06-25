@@ -57,7 +57,7 @@ public class EnemyPatrolShoot : MonoBehaviour
         // Timeout: se passou do tempo máximo, escolhe outro ponto
         if (Time.time - patrolStartTime > maxTimeToReachPoint)
         {
-            Debug.Log($"{name} desistiu do ponto de patrulha (timeout).");
+
             SetNewPatrolTarget();
             return;
         }

@@ -17,6 +17,11 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip slimeWalkClip;
     [SerializeField] private AudioClip hitClip;
 
+    [Header("Boss SFX")]
+    [SerializeField] private AudioClip bossMode1SFX; // Som completo para o modo 1 (círculo de projéteis)
+    [SerializeField] private AudioClip bossMode2SFX; // Som individual para cada tiro do modo 2
+    [SerializeField] private AudioClip bossMode3SFX; // Som completo para o modo 3 (cone de tiros)
+
     [Header("Música de Fundo")]
     [SerializeField] private AudioSource musicSource;           // AudioSource para música de fundo
     [SerializeField] private AudioClip[] backgroundMusicClips;    // Array com os clipes de trilha sonora
@@ -145,4 +150,8 @@ public class AudioManager : MonoBehaviour
         sfxSource.pitch = originalPitch;
     }
 
+    // Métodos para os sons do Boss
+    public void PlayBossMode1Sound() => PlaySfx(bossMode1SFX);
+    public void PlayBossMode2Sound() => PlaySfx(bossMode2SFX);
+    public void PlayBossMode3Sound() => PlaySfx(bossMode3SFX);
 }
