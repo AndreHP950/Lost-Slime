@@ -8,60 +8,52 @@ public class Health : MonoBehaviour
     public int MaxHealth => maxHealth;
     public int Current { get; private set; }
 
-    [Header("Efeito de Morte")]
-    [SerializeField] private GameObject deathEffectPrefab; // Prefab do Visual Effect Graph
-
-    // Eventos pra UI / efeitos / morte
+    // Eventos para notificar alterações na vida, hits e morte
     public UnityEvent<int> onHealthChanged;
     public UnityEvent onDied;
     public UnityEvent onHit;
-    public bool isImmune = false; // Flag to track damage immunity
+    public bool isImmune = false;
 
     [Header("Animation")]
-    [SerializeField] private Animator healthAnimator;  // Referência ao Animator para disparar triggers
+    [SerializeField] private Animator healthAnimator; // Para disparar triggers de animação
 
     void Awake()
     {
         Current = maxHealth;
-        onHealthChanged.Invoke(Current);
-        
-        // Tenta obter o Animator se não tiver sido atribuído
+        onHealthChanged?.Invoke(Current);
+
         if (healthAnimator == null)
             healthAnimator = GetComponentInChildren<Animator>();
     }
 
     /// <summary>
-    /// amount < 0 = dano, > 0 = cura
+    /// Aplica dano (valor negativo) ou cura (valor positivo) e dispara os eventos correspondentes.
     /// </summary>
     public void Apply(int amount)
     {
-        // Ignora dano se estiver imune
         if (amount < 0 && isImmune)
             return;
 
-        // Se já está morto, não faz nada
         if (Current <= 0)
             return;
 
         int oldCurrent = Current;
         Current = Mathf.Clamp(Current + amount, 0, maxHealth);
-        onHealthChanged.Invoke(Current);
+        onHealthChanged?.Invoke(Current);
 
         if (amount < 0)
         {
-            onHit.Invoke();
-            AudioManager.Instance.PlayHitLowPitch();
+            onHit?.Invoke();
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlayHitLowPitch();
             if (healthAnimator != null)
                 healthAnimator.SetTrigger("Hit");
 
-            // Só dispara morte se estava vivo antes e agora morreu
             if (oldCurrent > 0 && Current == 0)
             {
                 if (healthAnimator != null)
                     healthAnimator.SetTrigger("Death");
-
-                onDied.Invoke();
-                TriggerDeathEffect();
+                onDied?.Invoke();
             }
         }
         else if (amount > 0)
@@ -70,16 +62,6 @@ public class Health : MonoBehaviour
                 AudioManager.Instance.PlayHeal();
             if (healthAnimator != null)
                 healthAnimator.SetTrigger("Recover");
-        }
-    }
-
-
-    private void TriggerDeathEffect()
-    {
-        if (deathEffectPrefab != null)
-        {
-            GameObject effect = Instantiate(deathEffectPrefab, transform.position, transform.rotation);
-            Destroy(effect, 3f);
         }
     }
 }
