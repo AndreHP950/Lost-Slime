@@ -19,6 +19,8 @@ public class DialogueManager : MonoBehaviour
     // Referências
     [SerializeField] private DialogueUI dialogueUI;
     [SerializeField] private PlayerMovement playerMovement;
+    [SerializeField] private PlayerAttack playerAttack;
+
 
     // Evento que ocorre ao finalizar todos os diálogos
     public System.Action onDialogueComplete;
@@ -45,7 +47,8 @@ public class DialogueManager : MonoBehaviour
         // Impede o jogador de se mover durante o diálogo
         if (playerMovement != null)
             playerMovement.enabled = false;
-
+        if (playerAttack != null)
+            playerAttack.enabled = false;
         currentDialogue.Clear();
         foreach (var line in lines)
         {
@@ -98,7 +101,8 @@ public class DialogueManager : MonoBehaviour
         // Permite que o jogador se mova novamente
         if (playerMovement != null)
             playerMovement.enabled = true;
-
+        if (playerAttack != null)
+            playerAttack.enabled = true;
         // Notifica que o diálogo foi concluído
         onDialogueComplete?.Invoke();
     }

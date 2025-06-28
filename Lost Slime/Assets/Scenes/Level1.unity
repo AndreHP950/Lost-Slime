@@ -4173,6 +4173,7 @@ MonoBehaviour:
   typingSpeed: 0.05
   dialogueUI: {fileID: 218885278}
   playerMovement: {fileID: 4936067605612749147}
+  playerAttack: {fileID: 6462020619101332256}
 --- !u!1 &927751187 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -7074995724940881604, guid: 03beff56dafa1ed479408e1ccb723002, type: 3}
@@ -6065,7 +6066,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fdf1ffd5a5606b943ac9c260b68ea816, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 1
+  maxHealth: 65
   onHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -9125,6 +9126,17 @@ MonoBehaviour:
     Q to liquefy into a puddle, and Space to dash and become invulnerable. You can
     review these any time in the Options menu."
   - '[Intercom fizzles out]'
+--- !u!114 &6462020619101332256 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 263123862818326406, guid: 0e7872c392f30a84c95b163bfc2c1628, type: 3}
+  m_PrefabInstance: {fileID: 3450907380117444855}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2048050413}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21ddc7a1b9dd2a940b06f3f986a7057f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &7746753568846241735
 PrefabInstance:
   m_ObjectHideFlags: 0
