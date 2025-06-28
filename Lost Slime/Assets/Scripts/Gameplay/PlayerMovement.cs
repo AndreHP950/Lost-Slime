@@ -187,18 +187,24 @@ public class PlayerMovement : MonoBehaviour
 
         moveSpeed = 3f;
 
-        // Novo tamanho achatado
-        Vector3 newSize = new Vector3(originalColliderSize.x * 2f, 0.05f, originalColliderSize.z * 2f);
+        // Define a nova altura desejada
+        float newHeight = 0.05f; // Valor reduzido para torná-la mais fina
 
-        // Novo centro: base do colisor encostando no chão
-        float newCenterY = (newSize.y / 2f) - (originalColliderSize.y / 2f) + originalColliderCenter.y;
+        // Mantém os valores originais para X e Z
+        Vector3 newSize = new Vector3(originalColliderSize.x, newHeight, originalColliderSize.z);
 
+        // Calcula o "bottom" (base do colisor) a partir do colisor original
+        float originalBottom = originalColliderCenter.y - (originalColliderSize.y * 0.5f);
+        // O novo centro deve ser a base original + metade da nova altura
+        float newCenterY = originalBottom + (newHeight * 0.5f);
+
+        // Aplica os novos valores ao colisor
         playerCollider.size = newSize;
         playerCollider.center = new Vector3(originalColliderCenter.x, newCenterY, originalColliderCenter.z);
 
         yield return new WaitForSeconds(liquidDuration);
 
-        // Restaurar colisor
+        // Restaura os valores originais do colisor
         playerCollider.size = originalColliderSize;
         playerCollider.center = originalColliderCenter;
 
@@ -207,9 +213,8 @@ public class PlayerMovement : MonoBehaviour
 
         if (slimeAnimator != null)
             slimeAnimator.SetBool("IsLiquify", false);
-
-        
     }
+
 
 
 
