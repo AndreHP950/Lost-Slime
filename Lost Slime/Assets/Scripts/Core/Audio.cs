@@ -147,6 +147,26 @@ public class AudioManager : MonoBehaviour
         sfxSource.pitch = 1f + Random.Range(-pitchVariation, pitchVariation);
         sfxSource.PlayOneShot(clip, volume);
     }
+    // Adicione este método ao AudioManager
+    public void PlaySfxWithPitch(AudioClip clip, float volume = 1f, float pitch = 1f)
+    {
+        if (clip == null) return;
+
+        // Salva o pitch original
+        float originalPitch = sfxSource.pitch;
+
+        // Define o pitch desejado
+        sfxSource.pitch = pitch;
+
+        // Toca o som
+        sfxSource.PlayOneShot(clip, volume);
+
+        // Restaura o pitch original (opcional - depende de como você quer gerenciar)
+        // sfxSource.pitch = originalPitch;
+
+        // Nota: se você quiser restaurar o pitch após o som terminar,
+        // você precisaria usar uma coroutine que aguarda a duração do clip
+    }
 
     // Métodos auxiliares para facilitar chamadas em outros scripts:
     public void PlayButton() => PlaySfx(playButtonClip);

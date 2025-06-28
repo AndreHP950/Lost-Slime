@@ -44,6 +44,7 @@ public class HealthPickup : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+        Debug.Log("HealthPickup trigger chamado com objeto: " + other.name);
         if (!other.CompareTag("Player")) return;
 
         var hp = other.GetComponent<Health>();
@@ -53,7 +54,8 @@ public class HealthPickup : MonoBehaviour
         if (hp.Current >= hp.MaxHealth)
             return;
 
-        targetHealth.Apply(+healAmount);
+        // Use o componente Health do próprio objeto colidido (hp)
+        hp.Apply(+healAmount);
 
         if (targetFlash != null)
         {
@@ -70,4 +72,5 @@ public class HealthPickup : MonoBehaviour
 
         Destroy(gameObject);
     }
+
 }

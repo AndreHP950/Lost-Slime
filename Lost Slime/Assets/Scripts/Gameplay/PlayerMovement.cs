@@ -27,7 +27,7 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 originalColliderCenter;
 
     private Rigidbody rb;
-    private Vector3 inputVector;
+    public Vector3 inputVector;
     private Health health;
 
     // Armazena a velocidade base para ser usada como referência no multiplicador
@@ -44,6 +44,7 @@ public class PlayerMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionY;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         playerCollider = GetComponent<BoxCollider>();
         health = GetComponent<Health>();
 
