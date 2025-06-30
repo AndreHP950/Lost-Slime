@@ -139,22 +139,28 @@ public class PlayerMovement : MonoBehaviour
 
         if (dashTrailVFXPrefab != null)
         {
-            // Offset para trás do player (oposto ao dash)
-            Vector3 backOffset = -inputVector.normalized * 0.8f;
+            // Calcula um offset que garanta que o trail fique fora do colisor do player.
+            float extraOffset = playerCollider.bounds.extents.z + 0.5f;
+            Vector3 backOffset = -inputVector.normalized * extraOffset;
 
-            // Adiciona um offset para baixo (mais próximo do chão)
-            float verticalOffset = -0.8f; // Ajuste este valor conforme necessário
+            // Offset vertical ajustado, se necessário
+            float verticalOffset = -0.8f;
 
-            // Aplica os dois offsets
+            // Define a posição de spawn do trail
             Vector3 trailPosition = transform.position + backOffset + new Vector3(0, verticalOffset, 0);
 
             var vfx = Instantiate(dashTrailVFXPrefab, trailPosition, Quaternion.identity);
             vfx.transform.SetParent(transform); // para seguir o player durante o dash
             Destroy(vfx, 0.5f); // ajuste para o tempo do trail
         }
+        else
+        {
+            Debug.LogWarning("Dash Trail VFX Prefab não definido!");
+        }
 
         StartCoroutine(EndDash());
     }
+
 
 
 
